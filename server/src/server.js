@@ -20,10 +20,13 @@ import Incident from './models/Incident.js';
 import Resource from './models/Resource.js';
 import Simulation from './models/Simulation.js';
 import User from './models/User.js';
+import Organization from './models/Organization.js';
 
 // Routes & Middleware
 import authRoutes from './routes/authRoutes.js';
+import organizationRoutes from './routes/organizationRoutes.js';
 import { requireAuth } from './middleware/auth.js';
+import { getMe } from './controllers/authController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -59,8 +62,12 @@ app.use(cors({
 
 app.use(express.json());
 
-// ─── AUTHENTICATION ROUTES ───────────────────────────────────────────
+// ─── AUTHENTICATION & IDENTITY ROUTES ─────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.get('/api/users/me', requireAuth, getMe);
+
+// ─── ORGANIZATION ROUTES ──────────────────────────────────────────────
+app.use('/api/organizations', organizationRoutes);
 
 
 // ─── 1. HEALTH CHECK ─────────────────────────────────────────────────

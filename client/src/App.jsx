@@ -43,6 +43,7 @@ export default function App() {
   // AEGIS 2.0 Modes: 'DEMO' | 'LIVE'
   const [mode, setMode] = useState('DEMO');
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentOrg, setCurrentOrg] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
   
@@ -121,12 +122,14 @@ export default function App() {
         .then((res) => {
           if (res?.user) {
             setCurrentUser(res.user);
+            setCurrentOrg(res.organization || null);
             setMode('LIVE');
           }
         })
         .catch(() => {
           // Token expired or invalid
           setCurrentUser(null);
+          setCurrentOrg(null);
           setMode('DEMO');
         });
     }
@@ -147,8 +150,9 @@ export default function App() {
     }
   };
 
-  const handleAuthSuccess = (user) => {
+  const handleAuthSuccess = (user, organization) => {
     setCurrentUser(user);
+    setCurrentOrg(organization || null);
     setMode('LIVE');
     showToast(`> CLEARANCE VERIFIED // OPERATOR: ${user.role} ${user.name}`, "success");
   };
@@ -160,6 +164,7 @@ export default function App() {
       console.warn('Logout API error:', err);
     }
     setCurrentUser(null);
+    setCurrentOrg(null);
     setMode('DEMO');
     showToast("> SESSION TERMINATED // REVERTED TO DEMO MODE", "info");
   };
@@ -320,6 +325,7 @@ export default function App() {
         mode={mode}
         onToggleMode={handleToggleMode}
         currentUser={currentUser}
+        currentOrg={currentOrg}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileDrawerOpen(true)}
       />
@@ -407,6 +413,8 @@ export default function App() {
         {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
         {currentStage === 'command' && (
           <CommandCenterScreen
+            currentUser={currentUser}
+            currentOrg={currentOrg}
             onResourceAssigned={(unit, targetZone) => {
               showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
             }}
@@ -505,6 +513,7 @@ export default function App() {
         isOpen={isProfileDrawerOpen}
         onClose={() => setIsProfileDrawerOpen(false)}
         currentUser={currentUser}
+        currentOrg={currentOrg}
         onLogout={handleLogout}
         mode={mode}
         onToggleMode={handleToggleMode}

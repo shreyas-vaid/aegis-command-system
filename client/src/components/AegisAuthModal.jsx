@@ -46,7 +46,7 @@ export default function AegisAuthModal({
           localStorage.setItem('aegis_auth_token', res.token);
           setSuccessMsg(`Welcome back, ${res.user.role} ${res.user.name}`);
           setTimeout(() => {
-            onAuthSuccess(res.user);
+            onAuthSuccess(res.user, res.organization);
             onClose();
           }, 800);
         }
@@ -62,7 +62,7 @@ export default function AegisAuthModal({
           localStorage.setItem('aegis_auth_token', res.token);
           setSuccessMsg(`Commission complete. Logged in as ${res.user.name}`);
           setTimeout(() => {
-            onAuthSuccess(res.user);
+            onAuthSuccess(res.user, res.organization);
             onClose();
           }, 800);
         }

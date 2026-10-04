@@ -23,7 +23,8 @@ const userSchema = new mongoose.Schema({
     default: 'COMMANDER'
   },
   organizationId: {
-    type: mongoose.Schema.Types.Mixed,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Organization',
     default: null
   }
 }, {

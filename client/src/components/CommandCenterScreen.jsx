@@ -18,7 +18,9 @@ import { assignResource } from '../services/api';
 
 export default function CommandCenterScreen({
   onCreatePlan,
-  onResourceAssigned
+  onResourceAssigned,
+  currentOrg = null,
+  currentUser = null
 }) {
   const [selectedUnit, setSelectedUnit] = useState(0);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -89,6 +91,35 @@ export default function CommandCenterScreen({
           <h2 className="font-hud" style={{ fontSize: '30px', fontWeight: '800', color: '#eae5d8', margin: '4px 0 0 0', letterSpacing: '0.04em' }}>
             TACTICAL DEPLOYMENT MATRIX
           </h2>
+        </div>
+
+        {/* Organization Operational Context Banner */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(8, 13, 10, 0.75)',
+          padding: '10px 16px',
+          borderRadius: '4px',
+          border: '1px solid rgba(214, 198, 165, 0.16)',
+          borderLeft: '3px solid #6F947D'
+        }}>
+          <div>
+            <span className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em', display: 'block' }}>
+              JURISDICTION / ORGANIZATION
+            </span>
+            <span className="font-hud" style={{ fontSize: '13px', fontWeight: '700', color: '#EAE5D8' }}>
+              {currentOrg?.name || 'Chandigarh Emergency Response Corps'}
+            </span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em', display: 'block' }}>
+              ACTIVE OPERATIONS
+            </span>
+            <span className="font-mono" style={{ fontSize: '11px', color: '#4ADE80', fontWeight: '700' }}>
+              ● 1 ACTIVE // FLASH FLOOD CASCADE (#027)
+            </span>
+          </div>
         </div>
 
         {/* Compact Operational Metrics Bar */}

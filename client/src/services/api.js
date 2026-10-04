@@ -103,6 +103,33 @@ export function getMe() {
   return request('/api/auth/me');
 }
 
+export function getUsersMe() {
+  return request('/api/users/me');
+}
+
+// ─── ORGANIZATIONS ───────────────────────────────────────────────────
+export function getOrganization(id) {
+  return request(`/api/organizations/${id}`);
+}
+
+export function createOrganization(data) {
+  return request('/api/organizations', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function updateOrganization(id, data) {
+  return request(`/api/organizations/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export function getOrganizationUsers(id) {
+  return request(`/api/organizations/${id}/users`);
+}
+
 // ─── HEALTH ──────────────────────────────────────────────────────────
 export function getHealth() {
   return request('/api/health');

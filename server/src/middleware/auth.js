@@ -112,3 +112,35 @@ export function requireRole(...allowedRoles) {
     next();
   };
 }
+
+/**
+ * Organization access authorization middleware:
+ * Ensures the authenticated user's organizationId matches the target organization.
+ * NEVER trusts client-supplied organizationId.
+ * Returns 403 Forbidden if accessing another organization's data.
+ */
+export function requireOrganizationAccess(paramName = 'id') {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const targetOrgId = req.params[paramName];
+    if (!targetOrgId) {
+      return res.status(400).json({ error: 'Missing organization identifier parameter' });
+    }
+
+    const userOrgId = req.user.organizationId ? req.user.organizationId.toString() : null;
+
+    // Strict organization data isolation
+    if (!userOrgId || userOrgId !== targetOrgId.toString()) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Access denied: You are not authorized to access this organization'
+      });
+    }
+
+    next();
+  };
+}
+

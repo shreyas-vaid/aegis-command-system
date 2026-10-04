@@ -25,6 +25,7 @@ export default function MissionNavBar({
   mode = 'DEMO',
   onToggleMode,
   currentUser = null,
+  currentOrg = null,
   onOpenAuth,
   onOpenProfile
 }) {
@@ -148,23 +149,34 @@ export default function MissionNavBar({
           {currentUser ? (
             <button
               onClick={onOpenProfile}
-              className="font-mono"
               style={{
-                fontSize: '11px',
-                padding: '4px 10px',
-                background: 'rgba(111, 148, 125, 0.16)',
-                border: '1px solid rgba(214, 198, 165, 0.35)',
-                color: '#EAE5D8',
+                background: 'rgba(8, 13, 10, 0.85)',
+                border: '1px solid rgba(214, 198, 165, 0.28)',
+                borderLeft: '3px solid #6F947D',
                 borderRadius: '4px',
+                padding: '4px 10px',
                 cursor: 'pointer',
-                display: 'inline-flex',
+                textAlign: 'left',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '8px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                transition: 'all 0.2s ease'
               }}
-              title="Click to view operator dossier and settings"
+              title="Click to view operator dossier, organization clearance and settings"
             >
-              <UserCheck size={13} color="#4ADE80" />
-              <span>{currentUser.role}: {currentUser.name.split(' ')[0]}</span>
+              <div style={{ lineHeight: 1.15 }}>
+                <div className="font-mono" style={{ fontSize: '8px', color: '#4ADE80', fontWeight: '800', letterSpacing: '0.08em' }}>
+                  {currentUser.role}
+                </div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#EAE5D8', letterSpacing: '0.02em' }}>
+                  {currentUser.name}
+                </div>
+                <div className="font-mono" style={{ fontSize: '8.5px', color: '#D6C6A5', opacity: 0.9 }}>
+                  {currentOrg?.name || 'Chandigarh Emergency Response'}
+                </div>
+              </div>
+              <UserCheck size={14} color="#4ADE80" style={{ flexShrink: 0 }} />
             </button>
           ) : (
             <button

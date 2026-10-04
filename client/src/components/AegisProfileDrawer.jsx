@@ -15,6 +15,7 @@ export default function AegisProfileDrawer({
   isOpen,
   onClose,
   currentUser,
+  currentOrg,
   onLogout,
   mode,
   onToggleMode
@@ -155,10 +156,22 @@ export default function AegisProfileDrawer({
               <div className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em' }}>
                 ORGANIZATION / JURISDICTION
               </div>
-              <div style={{ fontSize: '12px', color: '#D6C6A5', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Building2 size={13} color="#6F947D" />
-                <span>{currentUser.organizationId || 'Chandigarh Emergency Response'}</span>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#D6C6A5', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Building2 size={14} color="#6F947D" />
+                <span>{currentOrg?.name || currentUser.organizationId || 'Chandigarh Emergency Response'}</span>
               </div>
+              {currentOrg?.type && (
+                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                  <span className="font-mono" style={{ fontSize: '9px', background: 'rgba(214, 198, 165, 0.12)', border: '1px solid rgba(214, 198, 165, 0.25)', color: '#EAE5D8', padding: '1px 6px', borderRadius: '2px' }}>
+                    {currentOrg.type}
+                  </span>
+                  {currentOrg.location && (
+                    <span className="font-mono" style={{ fontSize: '9px', background: 'rgba(111, 148, 125, 0.12)', border: '1px solid rgba(111, 148, 125, 0.25)', color: '#A7F3D0', padding: '1px 6px', borderRadius: '2px' }}>
+                      📍 {currentOrg.location}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

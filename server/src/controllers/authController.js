@@ -1,7 +1,9 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
+import Organization from '../models/Organization.js';
 import { signToken } from '../middleware/auth.js';
+import { getOrCreateDefaultOrg, DEFAULT_DEMO_ORG } from '../services/organizationService.js';
 
 // In-memory fallback user registry for offline development / test resilience
 const inMemoryUsers = new Map();
@@ -38,6 +40,8 @@ export async function register(req, res) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    let targetOrgId = organizationId;
+
     if (mongoose.connection.readyState === 1) {
       // Check if user already exists
       const existingUser = await User.findOne({ email: normalizedEmail });
@@ -45,12 +49,24 @@ export async function register(req, res) {
         return res.status(409).json({ error: 'Email already registered' });
       }
 
+      // If no org specified or invalid, bind to default demo org
+      let org = null;
+      if (targetOrgId && mongoose.Types.ObjectId.isValid(targetOrgId)) {
+        org = await Organization.findById(targetOrgId);
+      } else if (targetOrgId) {
+        org = await Organization.findOne({ name: targetOrgId });
+      }
+
+      if (!org) {
+        org = await getOrCreateDefaultOrg();
+      }
+
       const newUser = await User.create({
         name: name.trim(),
         email: normalizedEmail,
         passwordHash,
         role: normalizedRole,
-        organizationId
+        organizationId: org._id
       });
 
       const token = signToken(newUser);
@@ -63,9 +79,10 @@ export async function register(req, res) {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
-          organizationId: newUser.organizationId,
+          organizationId: newUser.organizationId.toString(),
           createdAt: newUser.createdAt
-        }
+        },
+        organization: org
       });
     } else {
       // In-memory fallback
@@ -73,6 +90,7 @@ export async function register(req, res) {
         return res.status(409).json({ error: 'Email already registered' });
       }
 
+      const defaultOrg = DEFAULT_DEMO_ORG;
       const mockId = 'usr_' + Date.now().toString(36);
       const fallbackUser = {
         _id: mockId,
@@ -81,7 +99,7 @@ export async function register(req, res) {
         email: normalizedEmail,
         passwordHash,
         role: normalizedRole,
-        organizationId: organizationId || 'demo-org-chandigarh',
+        organizationId: targetOrgId || defaultOrg._id,
         createdAt: new Date().toISOString()
       };
       inMemoryUsers.set(normalizedEmail, fallbackUser);
@@ -98,7 +116,8 @@ export async function register(req, res) {
           role: fallbackUser.role,
           organizationId: fallbackUser.organizationId,
           createdAt: fallbackUser.createdAt
-        }
+        },
+        organization: defaultOrg
       });
     }
   } catch (err) {
@@ -140,6 +159,22 @@ export async function login(req, res) {
 
     const token = signToken(user);
 
+    // Resolve organization
+    let organization = null;
+    if (mongoose.connection.readyState === 1) {
+      if (user.organizationId) {
+        organization = await Organization.findById(user.organizationId).lean();
+      }
+      if (!organization) {
+        organization = await getOrCreateDefaultOrg();
+        if (!user.organizationId && organization._id) {
+          await User.findByIdAndUpdate(user._id, { organizationId: organization._id });
+        }
+      }
+    } else {
+      organization = DEFAULT_DEMO_ORG;
+    }
+
     return res.status(200).json({
       message: 'Operator authenticated successfully',
       token,
@@ -148,9 +183,10 @@ export async function login(req, res) {
         name: user.name,
         email: user.email,
         role: user.role,
-        organizationId: user.organizationId,
+        organizationId: user.organizationId ? user.organizationId.toString() : organization?._id,
         createdAt: user.createdAt
-      }
+      },
+      organization
     });
   } catch (err) {
     console.error('[AEGIS-AUTH] Login error:', err);
@@ -171,7 +207,7 @@ export async function logout(req, res) {
 
 /**
  * GET /api/auth/me
- * Retrieves the currently authenticated operator's profile
+ * Retrieves the currently authenticated operator's profile with organization
  */
 export async function getMe(req, res) {
   try {
@@ -179,8 +215,28 @@ export async function getMe(req, res) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
+    let organization = null;
+    const orgId = req.user.organizationId;
+
+    if (mongoose.connection.readyState === 1) {
+      if (orgId && mongoose.Types.ObjectId.isValid(orgId)) {
+        organization = await Organization.findById(orgId).lean();
+      }
+      if (!organization && orgId) {
+        organization = await Organization.findOne({
+          $or: [{ name: orgId }, { _id: orgId }]
+        }).lean();
+      }
+      if (!organization) {
+        organization = await getOrCreateDefaultOrg();
+      }
+    } else {
+      organization = DEFAULT_DEMO_ORG;
+    }
+
     return res.status(200).json({
-      user: req.user
+      user: req.user,
+      organization
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to fetch operator profile', details: err.message });
