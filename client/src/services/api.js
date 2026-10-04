@@ -18,13 +18,52 @@ const normalizedBase = rawApiUrl
   ? (rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl)
   : (import.meta.env.DEV ? 'http://localhost:5000' : '');
 
+// Token storage key
+const TOKEN_KEY = 'aegis_auth_token';
+
+export function getAuthToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token) {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  } catch (err) {
+    console.warn('[AEGIS-AUTH] Storage error:', err);
+  }
+}
+
+export function clearAuthToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch (err) {
+    console.warn('[AEGIS-AUTH] Storage clear error:', err);
+  }
+}
+
 async function request(path, options = {}) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const url = `${normalizedBase}${normalizedPath}`;
+  const token = getAuthToken();
+
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(options.headers || {})
+    };
+
     const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options
+      ...options,
+      headers
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -35,6 +74,33 @@ async function request(path, options = {}) {
     console.warn(`[AEGIS-API] Request failed: ${path}`, err.message);
     throw err;
   }
+}
+
+// ─── AUTHENTICATION ──────────────────────────────────────────────────
+export function registerUser(userData) {
+  return request('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  });
+}
+
+export function loginUser(credentials) {
+  return request('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials)
+  });
+}
+
+export function logoutUser() {
+  return request('/api/auth/logout', {
+    method: 'POST'
+  }).finally(() => {
+    clearAuthToken();
+  });
+}
+
+export function getMe() {
+  return request('/api/auth/me');
 }
 
 // ─── HEALTH ──────────────────────────────────────────────────────────

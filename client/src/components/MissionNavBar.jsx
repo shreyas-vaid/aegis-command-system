@@ -6,7 +6,9 @@ import {
   Activity, 
   AlertTriangle,
   Radio,
-  Lock
+  Lock,
+  User,
+  UserCheck
 } from 'lucide-react';
 
 import { AegisMissionRail } from './aegis-controls';
@@ -19,7 +21,12 @@ export default function MissionNavBar({
   onBack,
   cityHealth = 70,
   activeAlerts = 7,
-  hospitalLoad = 72
+  hospitalLoad = 72,
+  mode = 'DEMO',
+  onToggleMode,
+  currentUser = null,
+  onOpenAuth,
+  onOpenProfile
 }) {
   const stages = [
     { id: 'briefing', num: '01', label: 'BRIEF', tooltip: 'Operational briefing & DEFCON directives' },
@@ -51,25 +58,61 @@ export default function MissionNavBar({
       boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)'
     }}>
       
-      {/* Top Line: Brand, Operation, Compact Metrics, Back & Reset */}
+      {/* Top Line: Brand, Mode, Compact Metrics, Profile & Reset */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         
-        {/* Left: Brand & Directive */}
+        {/* Left: Brand, Mode Indicator & Directive */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '4px', background: 'rgba(111, 148, 125, 0.2)', border: '1px solid rgba(214, 198, 165, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D6C6A5' }}>
             <ShieldAlert size={16} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span className="font-hud" style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '0.14em', color: '#EAE5D8' }}>
                 AEGIS
               </span>
+              
+              {/* CLEAR MODE INDICATOR */}
+              <button
+                onClick={onToggleMode}
+                title={mode === 'LIVE' ? "Active: LIVE OPERATION mode. Click to toggle." : "Active: DEMO MODE. Click to authenticate and switch to LIVE OPERATION."}
+                className="font-mono"
+                style={{
+                  fontSize: '9px',
+                  fontWeight: '700',
+                  letterSpacing: '0.08em',
+                  padding: '2px 8px',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.2s ease',
+                  background: mode === 'LIVE' ? 'rgba(74, 222, 128, 0.16)' : 'rgba(201, 154, 69, 0.16)',
+                  border: `1px solid ${mode === 'LIVE' ? 'rgba(74, 222, 128, 0.5)' : 'rgba(201, 154, 69, 0.5)'}`,
+                  color: mode === 'LIVE' ? '#4ADE80' : '#D6C6A5'
+                }}
+              >
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: mode === 'LIVE' ? '#4ADE80' : '#C99A45',
+                  boxShadow: mode === 'LIVE' ? '0 0 6px #4ADE80' : 'none',
+                  display: 'inline-block'
+                }} />
+                {mode === 'LIVE' ? '[ LIVE OPERATION ]' : '[ DEMO MODE ]'}
+              </button>
+
               <span className="font-mono" style={{ fontSize: '10px', background: 'rgba(217, 83, 79, 0.2)', border: '1px solid rgba(217, 83, 79, 0.45)', color: '#FCA5A5', padding: '1px 6px', borderRadius: '2px', fontWeight: '700' }}>
                 OPERATION #027
               </span>
             </div>
-            <div className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4' }}>
-              DEFCON 2 · FLASH FLOOD CASCADE
+            <div className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>DEFCON 2 · FLASH FLOOD CASCADE</span>
+              {currentUser && (
+                <span style={{ color: '#D6C6A5' }}>· {currentUser.organizationId || 'Chandigarh Emergency'}</span>
+              )}
             </div>
           </div>
         </div>
@@ -99,8 +142,53 @@ export default function MissionNavBar({
           </div>
         </div>
 
-        {/* Right: Stage Control Buttons */}
+        {/* Right: Operator Identity & Stage Control Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          
+          {currentUser ? (
+            <button
+              onClick={onOpenProfile}
+              className="font-mono"
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                background: 'rgba(111, 148, 125, 0.16)',
+                border: '1px solid rgba(214, 198, 165, 0.35)',
+                color: '#EAE5D8',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Click to view operator dossier and settings"
+            >
+              <UserCheck size={13} color="#4ADE80" />
+              <span>{currentUser.role}: {currentUser.name.split(' ')[0]}</span>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="font-mono"
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                background: 'rgba(214, 198, 165, 0.12)',
+                border: '1px solid rgba(214, 198, 165, 0.3)',
+                color: '#D6C6A5',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Authenticate operator for LIVE OPERATION mode"
+            >
+              <Lock size={12} color="#D6C6A5" />
+              <span>AUTHENTICATE</span>
+            </button>
+          )}
+
           {currentStage !== 'briefing' && (
             <button
               className="btn-command-secondary"

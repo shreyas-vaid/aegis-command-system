@@ -14,6 +14,8 @@ import DeploymentAnimationScreen from './components/DeploymentAnimationScreen';
 import OutcomeScreen from './components/OutcomeScreen';
 import { AegisSystemFeedback } from './components/aegis-controls';
 import { AegisCursor, AegisLivingCanvas, AegisCinematicTransition } from './components/aegis-interactive';
+import AegisAuthModal from './components/AegisAuthModal';
+import AegisProfileDrawer from './components/AegisProfileDrawer';
 import { 
   getState, 
   resetState, 
@@ -21,7 +23,10 @@ import {
   getMissions, 
   getZones, 
   getIncidents, 
-  getResources 
+  getResources,
+  getMe,
+  logoutUser,
+  getAuthToken
 } from './services/api';
 import { WifiOff, Radio, Cpu, RefreshCw } from 'lucide-react';
 
@@ -34,6 +39,12 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [isOffline, setIsOffline] = useState(false);
   const [syncState, setSyncState] = useState(null); // 'MISSION SYNCING' | 'ZONE TELEMETRY SYNCING' | 'FUSION ENGINE ACTIVE' | 'SIMULATION PROCESSING'
+
+  // AEGIS 2.0 Modes: 'DEMO' | 'LIVE'
+  const [mode, setMode] = useState('DEMO');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
   
   // Tactical State across mission
   const [activeStrategy, setActiveStrategy] = useState('ai');
@@ -102,7 +113,56 @@ export default function App() {
 
   useEffect(() => {
     fetchWorldState(true);
+
+    // Check for existing valid operator token
+    const token = getAuthToken();
+    if (token) {
+      getMe()
+        .then((res) => {
+          if (res?.user) {
+            setCurrentUser(res.user);
+            setMode('LIVE');
+          }
+        })
+        .catch(() => {
+          // Token expired or invalid
+          setCurrentUser(null);
+          setMode('DEMO');
+        });
+    }
   }, [fetchWorldState]);
+
+  const handleToggleMode = () => {
+    if (mode === 'DEMO') {
+      if (!currentUser) {
+        setIsAuthModalOpen(true);
+        showToast("OPERATOR AUTHENTICATION REQUIRED FOR LIVE OPERATION", "info");
+      } else {
+        setMode('LIVE');
+        showToast(`> LIVE OPERATION ENGAGED // ${currentUser.role} ${currentUser.name}`, "success");
+      }
+    } else {
+      setMode('DEMO');
+      showToast("> DEMO / SIMULATION MODE ENGAGED // SCENARIO #027", "info");
+    }
+  };
+
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user);
+    setMode('LIVE');
+    showToast(`> CLEARANCE VERIFIED // OPERATOR: ${user.role} ${user.name}`, "success");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    }
+    setCurrentUser(null);
+    setMode('DEMO');
+    showToast("> SESSION TERMINATED // REVERTED TO DEMO MODE", "info");
+  };
 
   // Trigger contextual loading banners on major stage changes
   const handleStageSelect = (stageId) => {
@@ -257,6 +317,11 @@ export default function App() {
         cityHealth={currentStage === 'outcome' ? 78 : currentStage === 'simulate' ? 61 : (worldState?.cityHealth || 70)}
         activeAlerts={currentStage === 'outcome' ? 2 : (worldState?.activeAlerts || 7)}
         hospitalLoad={currentStage === 'outcome' ? 64 : currentStage === 'simulate' ? 91 : (worldState?.hospitalLoad || 72)}
+        mode={mode}
+        onToggleMode={handleToggleMode}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileDrawerOpen(true)}
       />
 
       {/* Dedicated Interactive Stage Screen wrapped in Cinematic Transition */}
@@ -427,6 +492,23 @@ export default function App() {
 
         </AegisCinematicTransition>
       </main>
+
+      {/* AEGIS 2.0 Identification & Authentication Portal */}
+      <AegisAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* AEGIS Operator Dossier & Session Drawer */}
+      <AegisProfileDrawer
+        isOpen={isProfileDrawerOpen}
+        onClose={() => setIsProfileDrawerOpen(false)}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        mode={mode}
+        onToggleMode={handleToggleMode}
+      />
 
     </div>
   );
