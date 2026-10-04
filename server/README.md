@@ -1,155 +1,121 @@
-# AEGIS API Server
+# AEGIS Server — Phase 2: MongoDB Data Layer
 
-Backend for the AEGIS AI Emergency Governance & Intelligence System.
+Lightweight Express backend for the AEGIS system with MongoDB persistence.
 
-## Stack
+---
 
+## 🛠️ Tech Stack
 - **Runtime**: Node.js
 - **Framework**: Express
-- **Database**: MongoDB (via Mongoose) — optional, falls back to in-memory
-- **Auth**: None (hackathon prototype)
+- **Database**: MongoDB (via Mongoose)
+- **Middleware**: CORS
+- **Environment**: dotenv
+- **Development Tool**: nodemon
 
-## Quick Start
+---
 
+## 📁 Directory Structure
+```
+server/
+├── src/
+│   ├── server.js                        # Express server entry point & DB startup guard
+│   ├── config/
+│   │   └── db.js                        # Reusable MongoDB connection & error handling
+│   ├── models/                          # Mongoose Schemas & Models
+│   │   ├── Mission.js                   # Mission schema
+│   │   ├── Zone.js                      # Tactical Sector schema
+│   │   ├── Incident.js                  # Incident signal schema
+│   │   ├── Resource.js                  # Fleet asset schema
+│   │   └── Simulation.js                # Flexible simulation run schema
+│   ├── routes/
+│   │   └── healthRoutes.js              # Health check router
+│   ├── controllers/
+│   │   └── healthController.js          # Health check handler
+│   └── seed/
+│       └── seedData.js                  # Database seed script
+├── package.json                         # Scripts & dependencies
+├── .env.example                         # Environment template
+├── .gitignore                           # Security ignore file
+└── README.md
+```
+
+---
+
+## 🚀 Setup & Installation
+
+### 1. MongoDB Atlas Setup
+1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+2. Under **Database Access**, create a database user with read/write privileges.
+3. Under **Network Access**, add `0.0.0.0/0` (allow access from anywhere) or your IP address.
+4. Go to **Clusters** → **Connect** → **Drivers** and copy your connection string:
+   ```
+   mongodb+srv://<username>:<password>@cluster0.mongodb.net/aegis?retryWrites=true&w=majority
+   ```
+
+### 2. Configure Environment (.env)
+Create `server/.env` by copying `.env.example`:
 ```bash
-# Install dependencies
-npm install
-
-# Copy environment template
 cp .env.example .env
+```
 
-# Start development server (with auto-reload)
+Set your configuration values (do **never** commit `.env`):
+```env
+PORT=5000
+CLIENT_URL=http://localhost:5173
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/aegis?retryWrites=true&w=majority
+```
+*(For local MongoDB installations, you can use `mongodb://127.0.0.1:27017/aegis`)*
+
+### 3. Install Dependencies
+```bash
+npm install
+```
+
+### 4. Seed the Database
+Seed the baseline Mission #027, Sectors A-E, incidents, and fleet assets:
+```bash
+npm run seed
+```
+Output:
+```
+AEGIS DATABASE
+---------------
+Mission seeded: 027
+Zones seeded: 5
+Incidents seeded: 5
+Resources seeded: 5
+
+DATABASE SEED COMPLETE
+```
+
+### 5. Start Development Server
+```bash
 npm run dev
+```
+Starts `nodemon src/server.js` with auto-reload. Express starts only after the MongoDB connection succeeds.
 
-# Start production server
+### 6. Start Production Server
+```bash
 npm start
 ```
 
-## Environment Variables
+---
 
-| Variable      | Description                | Default                   |
-|---------------|----------------------------|---------------------------|
-| `PORT`        | Server port                | `5000`                    |
-| `CLIENT_URL`  | Frontend URL (CORS)        | `http://localhost:5173`   |
-| `MONGODB_URI` | MongoDB connection string  | _(in-memory if empty)_    |
-| `NODE_ENV`    | Environment                | `development`             |
+## 🔌 API Endpoints
 
-## API Endpoints
-
-### Health
-| Method | Path             | Description           |
-|--------|------------------|-----------------------|
-| GET    | `/api/health`    | Server health check   |
-
-### Missions
-| Method | Path                  | Description             |
-|--------|-----------------------|-------------------------|
-| GET    | `/api/missions`       | List all missions       |
-| GET    | `/api/missions/:id`   | Get mission details     |
-| POST   | `/api/missions`       | Create new mission      |
-| PATCH  | `/api/missions/:id`   | Update mission status   |
-
-### Zones
-| Method | Path                              | Description                |
-|--------|-----------------------------------|----------------------------|
-| GET    | `/api/zones`                      | List all zones             |
-| GET    | `/api/zones/:id`                  | Get zone details           |
-| GET    | `/api/zones/:id/explain`          | Explainable risk breakdown |
-| GET    | `/api/missions/:id/zones`         | Zones by mission           |
-
-### Incidents
-| Method | Path                              | Description              |
-|--------|------------------------------------|--------------------------|
-| GET    | `/api/incidents`                   | List incidents           |
-| POST   | `/api/incidents`                   | Create incident          |
-| PATCH  | `/api/incidents/:id`               | Update incident          |
-| GET    | `/api/missions/:id/incidents`      | Incidents by mission     |
-
-### Resources
-| Method | Path                              | Description              |
-|--------|------------------------------------|--------------------------|
-| GET    | `/api/resources`                   | List resources           |
-| POST   | `/api/resources/:type/assign`      | Assign resource to zone  |
-| POST   | `/api/action`                      | Deploy full response plan|
-| GET    | `/api/missions/:id/resources`      | Resources by mission     |
-
-### Simulation
-| Method | Path                              | Description              |
-|--------|------------------------------------|--------------------------|
-| POST   | `/api/simulations`                 | Run forward simulation   |
-| GET    | `/api/simulations/:id`             | Get simulation result    |
-| GET    | `/api/missions/:id/simulations`    | Simulations by mission   |
-
-### Investigation
-| Method | Path                       | Description                    |
-|--------|----------------------------|--------------------------------|
-| GET    | `/api/signals`             | List investigation signals     |
-| POST   | `/api/investigate/signal`  | Collect a signal               |
-| GET    | `/api/investigate/zone-e`  | Zone E investigation state     |
-| POST   | `/api/investigate/zone-e`  | Execute recon on Zone E        |
-
-### Recommendation Engine
-| Method | Path              | Description                          |
-|--------|-------------------|--------------------------------------|
-| GET    | `/api/recommend`  | Get strategic recommendations        |
-| POST   | `/api/recommend`  | Get zone-specific recommendations    |
-
-### Disaster Chess
-| Method | Path                 | Description            |
-|--------|----------------------|------------------------|
-| POST   | `/api/chess/action`  | Execute chess turn     |
-
-### Outcome
-| Method | Path             | Description                   |
-|--------|------------------|-------------------------------|
-| POST   | `/api/outcome`   | Generate after-action report  |
-
-## Architecture
-
-```
-server/
-├── server.js                          # Entry point
-├── src/
-│   ├── config/
-│   │   └── db.js                      # Database connection
-│   ├── controllers/
-│   │   ├── missionController.js
-│   │   ├── zoneController.js
-│   │   ├── incidentController.js
-│   │   ├── resourceController.js
-│   │   ├── simulationController.js
-│   │   ├── investigationController.js
-│   │   ├── recommendationController.js
-│   │   ├── chessController.js
-│   │   └── outcomeController.js
-│   ├── engine/
-│   │   ├── simulationEngine.js        # Deterministic projection
-│   │   └── recommendationEngine.js    # Rule-based decisions
-│   ├── models/
-│   │   ├── Mission.js
-│   │   ├── Zone.js
-│   │   ├── Incident.js
-│   │   ├── Resource.js
-│   │   └── Simulation.js
-│   ├── routes/
-│   │   ├── missionRoutes.js
-│   │   ├── zoneRoutes.js
-│   │   ├── incidentRoutes.js
-│   │   ├── resourceRoutes.js
-│   │   └── simulationRoutes.js
-│   ├── seed/
-│   │   └── seedData.js                # Demo scenario #027
-│   └── store/
-│       └── worldState.js              # In-memory state manager
-├── .env.example
-├── .gitignore
-└── package.json
+### Health Check
+- **Route**: `GET /api/health`
+- **Status**: `200 OK`
+- **Response**:
+```json
+{
+  "status": "ok",
+  "service": "AEGIS API",
+  "version": "1.0.0"
+}
 ```
 
-## Deployment
+---
 
-- **Backend**: Render / Railway
-- **Database**: MongoDB Atlas
-- **Frontend**: Vercel
-
-Set `MONGODB_URI` and `CLIENT_URL` in your deployment environment.
+## ⚠️ Simulated Data Notice
+All mission telemetry, sector risk ratings, incident details, and fleet capacity figures are **simulated / demo data** for prototype validation and crisis response simulation.
