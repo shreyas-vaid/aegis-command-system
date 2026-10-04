@@ -199,9 +199,14 @@ export default function App() {
           }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
             <WifiOff size={11} color="#f59e0b" />
-            <span className="font-mono" style={{ fontSize: '10px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
-              API OFFLINE · LOCAL SIMULATION ACTIVE
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+              <span className="font-mono" style={{ fontSize: '9px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
+                API OFFLINE
+              </span>
+              <span className="font-mono" style={{ fontSize: '8px', color: '#d6c6a5', letterSpacing: '0.06em' }}>
+                LOCAL SIMULATION ACTIVE
+              </span>
+            </div>
           </div>
         ) : (
           <div style={{

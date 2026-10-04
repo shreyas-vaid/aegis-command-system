@@ -240,20 +240,23 @@ app.post('/api/simulations', async (req, res) => {
     const incidents = await Incident.find({ missionId }).lean();
     const resources = await Resource.find({ missionId }).lean();
 
-    // Deterministic simulation rules
+    // Deterministic simulation rules:
+    // Higher risk + poor infrastructure + poor road access -> increased future risk
+    // Assigned rescue/medical resources -> reduce selected risk factors
     const simulatedZones = zones.map(z => {
       let riskDelta = 0;
-      if (timeOffset >= 30 && z.roadAccess < 30) riskDelta += 4;
-      if (timeOffset >= 60 && z.infrastructure < 40) riskDelta += 8;
+      if (z.roadAccess < 35) riskDelta += Math.round(timeOffset / 8);
+      if (z.infrastructure < 45) riskDelta += Math.round(timeOffset / 10);
+      if (z.risk > 70) riskDelta += Math.round(timeOffset / 12);
 
       // Deduction if commander dispatched an action
       const hasAction = actions.some(a => (a.zoneId || a.zone) === z.zoneId);
-      if (hasAction) riskDelta -= 12;
+      if (hasAction) riskDelta -= 14;
 
       const newRisk = Math.min(99, Math.max(10, z.risk + riskDelta));
-      const newRoadAccess = Math.max(5, z.roadAccess - Math.round(timeOffset / 12));
+      const newRoadAccess = Math.max(0, z.roadAccess - Math.round(timeOffset / 10));
       const newHospitalAccess = z.zoneId === 'D'
-        ? Math.max(5, z.hospitalAccess - Math.round(timeOffset / 4))
+        ? Math.max(0, z.hospitalAccess - Math.round(timeOffset / 3))
         : z.hospitalAccess;
 
       return {
@@ -268,11 +271,12 @@ app.post('/api/simulations', async (req, res) => {
 
     const simulationId = `SIM-${Date.now().toString().slice(-4)}`;
     const simResult = {
+      status: "SIMULATED",
       simulationId,
       missionId,
       timeOffset,
-      systemStatus: "SIMULATED FUTURE STATE",
-      notice: "SIMULATED FUTURE STATE — Deterministic projection. Not a predictive AI model.",
+      systemStatus: "SIMULATED PROJECTION",
+      notice: "SIMULATED PROJECTION — Deterministic projection. Not a predictive AI model.",
       hospitalStatus: timeOffset >= 30 ? "CRITICAL_LOAD (94%)" : "ELEVATED_LOAD (72%)",
       zones: simulatedZones,
       incidents,
@@ -286,7 +290,7 @@ app.post('/api/simulations', async (req, res) => {
       timeOffset,
       actions,
       result: simResult
-    });
+    }).catch(() => null);
 
     res.status(200).json(simResult);
   } catch (err) {
@@ -305,32 +309,44 @@ app.post('/api/recommend', async (req, res) => {
 
     const recommendations = [];
 
-    if (targetZone === 'D' || (zone && zone.risk >= 80)) {
+    // Simple rule-based explainable decision support:
+    // 1. If hospitalAccess is critical -> recommend medical resource
+    if (targetZone === 'D' || (zone && zone.hospitalAccess < 30)) {
       recommendations.push({
-        action: "Deploy medical unit",
-        reason: "Hospital intake access is critical",
+        action: "Deploy medical resource",
+        reason: "Hospital intake access is critical (traffic severed)",
         priority: "HIGH"
       });
+    }
+
+    // 2. If roadAccess is low -> recommend rescue/route support
+    if (targetZone === 'D' || (zone && zone.roadAccess < 30)) {
       recommendations.push({
-        action: "Redirect rescue resources",
-        reason: "Road accessibility is severely reduced",
+        action: "Deploy rescue & route support",
+        reason: "Road accessibility is severely reduced (<30%)",
         priority: "HIGH"
       });
-    } else if (zone && zone.roadAccess < 30) {
+    }
+
+    // 3. If risk > 80 -> recommend immediate intervention
+    if (targetZone === 'D' || (zone && zone.risk > 80)) {
       recommendations.push({
-        action: "Deploy engineering unit",
-        reason: "Road accessibility is severely reduced",
-        priority: "HIGH"
+        action: "Immediate emergency intervention",
+        reason: "Composite sector disaster risk exceeds 80 critical threshold",
+        priority: "CRITICAL"
       });
-    } else {
+    }
+
+    if (recommendations.length === 0) {
       recommendations.push({
-        action: "Maintain passive monitoring",
-        reason: "Sector parameters are within stable baseline",
+        action: "Maintain tactical monitoring",
+        reason: "Sector parameters within baseline limits",
         priority: "LOW"
       });
     }
 
     res.status(200).json({
+      status: "SIMULATED",
       engine: "AEGIS DECISION SUPPORT",
       system: "SIMULATED RECOMMENDATION ENGINE",
       notice: "Rule-based decision support. Not a trained AI model.",
