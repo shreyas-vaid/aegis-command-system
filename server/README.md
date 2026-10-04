@@ -117,5 +117,31 @@ npm start
 
 ---
 
+## ☁️ Render Deployment & Vercel Integration
+
+### 1. Render Deployment
+1. Connect your GitHub repository to [Render](https://render.com).
+2. Create a new **Web Service** using the repo.
+3. Configure the service:
+   - **Root Directory**: `server`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+4. Set Environment Variables in Render:
+   - `PORT`: `5000` (or Render default)
+   - `CLIENT_URL`: `https://YOUR-VERCEL-FRONTEND-URL`
+   - `MONGODB_URI`: `<Your MongoDB Atlas connection string>`
+   - `NODE_ENV`: `production`
+
+### 2. Vercel Frontend Configuration
+The Vercel frontend must be configured with:
+- **Environment Variable**: `VITE_API_URL`
+- **Value**: `https://YOUR-RENDER-API-URL/api`
+
+⚠️ **Security Note**: Never expose database credentials or secrets in `VITE_` frontend variables. All secrets belong exclusively in the Render backend environment.
+
+---
+
 ## ⚠️ Simulated Data Notice
 All mission telemetry, sector risk ratings, incident details, and fleet capacity figures are **simulated / demo data** for prototype validation and crisis response simulation.
+

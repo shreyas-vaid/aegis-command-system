@@ -9,6 +9,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 
 // Mongoose Models
@@ -22,13 +24,36 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
-// ─── MIDDLEWARE ──────────────────────────────────────────────────────
+// ─── CORS CONFIGURATION ──────────────────────────────────────────────
+const rawOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(url => url.trim())
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([
+  ...rawOrigins,
+  ...rawOrigins.map(url => url.replace(/\/+$/, '')),
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+])).filter(Boolean);
+
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Render health checks, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true
 }));
 
 app.use(express.json());
+
 
 // ─── 1. HEALTH CHECK ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -390,10 +415,10 @@ export async function startServer() {
     await connectDB();
 
     return new Promise((resolve) => {
-      const server = app.listen(PORT, () => {
-        console.log(`AEGIS Server listening on port ${PORT}`);
+      const server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`AEGIS Server listening on 0.0.0.0:${PORT}`);
         console.log(`CORS enabled for: ${CLIENT_URL}`);
-        console.log(`Health check: http://localhost:${PORT}/api/health`);
+        console.log(`Health check: http://0.0.0.0:${PORT}/api/health`);
         resolve(server);
       });
     });
@@ -404,7 +429,13 @@ export async function startServer() {
 }
 
 // Auto-run if executed as main module
-if (process.argv[1]?.replace(/\\/g, '/').endsWith('src/server.js')) {
+const currentFilePath = fileURLToPath(import.meta.url);
+const isDirectRun = process.argv[1] && (
+  path.resolve(process.argv[1]) === path.resolve(currentFilePath) ||
+  process.argv[1].replace(/\\/g, '/').endsWith('src/server.js')
+);
+
+if (isDirectRun) {
   startServer();
 }
 

@@ -9,10 +9,18 @@
  * ────────────────────────────────────────────────────────────────────
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// Configurable API base URL supporting VITE_API_URL
+// Examples:
+// Development: VITE_API_URL=http://localhost:5000/api
+// Production:  VITE_API_URL=https://YOUR-RENDER-API-URL/api
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const normalizedBase = rawApiUrl
+  ? (rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl)
+  : (import.meta.env.DEV ? 'http://localhost:5000' : '');
 
 async function request(path, options = {}) {
-  const url = `${API_BASE}${path}`;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${normalizedBase}${normalizedPath}`;
   try {
     const res = await fetch(url, {
       headers: { 'Content-Type': 'application/json' },
