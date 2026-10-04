@@ -1,0 +1,966 @@
+:root {
+  /* AEGIS Premium Operational Palette */
+  --bg-primary: #07100C;
+  --bg-deep-green: #0D1B14;
+  --bg-forest-deep: #14291E;
+  --bg-surface: #0A140F;
+  --bg-panel: rgba(13, 27, 20, 0.72);
+  --bg-panel-solid: #0D1B14;
+  --bg-panel-hover: rgba(49, 92, 67, 0.28);
+  
+  --color-forest: #315C43;
+  --color-forest-light: #496D58;
+  --color-sage: #5F806B;
+  --color-sage-light: #8FA995;
+  --color-beige: #D6C39A;
+  --color-beige-light: #E7D9B8;
+  --color-off-white: #F1EBDD;
+  --color-charcoal: #07100C;
+  --color-critical: #D9534F;
+  --color-critical-muted: #C2413E;
+  --color-critical-bg: rgba(217, 83, 79, 0.14);
+
+  /* Translucent borders and glass highlights */
+  --border-subtle: rgba(214, 195, 154, 0.12);
+  --border-medium: rgba(214, 195, 154, 0.24);
+  --border-accent: rgba(95, 128, 107, 0.45);
+  --border-beige-active: rgba(214, 195, 154, 0.65);
+  --border-glass: rgba(241, 235, 221, 0.16);
+  
+  --color-stable: #5F806B;
+  --color-stable-bg: rgba(95, 128, 107, 0.16);
+  --color-warning: #D6C39A;
+  --color-warning-bg: rgba(214, 195, 154, 0.16);
+  --color-orange: #D6C39A;
+  --color-orange-bg: rgba(214, 195, 154, 0.16);
+  --color-unknown: #8B72A8;
+  --color-unknown-bg: rgba(139, 114, 168, 0.16);
+  --color-cyan: #5F806B;
+  --color-cyan-bg: rgba(95, 128, 107, 0.14);
+
+  --font-hud: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--color-off-white);
+  font-family: var(--font-body);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(111, 148, 125, 0.08) 0%, transparent 65%),
+    radial-gradient(circle at 100% 100%, rgba(214, 198, 165, 0.04) 0%, transparent 50%),
+    linear-gradient(rgba(214, 198, 165, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 198, 165, 0.018) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(8, 13, 10, 0.85);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(111, 148, 125, 0.28);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 198, 165, 0.45);
+}
+
+/* Layout utilities */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+.font-hud {
+  font-family: var(--font-hud);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Restrained Glassmorphism panels */
+.hud-panel, .glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  position: relative;
+  box-shadow: 
+    0 20px 45px rgba(0, 0, 0, 0.65), 
+    inset 0 1px 1px rgba(234, 229, 216, 0.12),
+    inset 0 0 16px rgba(111, 148, 125, 0.03);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.hud-panel-bordered {
+  border: 1px solid var(--border-medium);
+}
+
+/* Corner bracket accents */
+.hud-corner {
+  position: relative;
+}
+.hud-corner::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--color-beige);
+  border-left: 2px solid var(--color-beige);
+  pointer-events: none;
+  z-index: 2;
+}
+.hud-corner::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid var(--color-beige);
+  border-right: 2px solid var(--color-beige);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Interactive 3D Object Cards & Specular Sheen */
+.aegis-3d-card-wrap {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.aegis-3d-card {
+  position: relative;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.aegis-glass-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(circle 280px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(214, 198, 165, 0.16), transparent 80%);
+}
+
+.aegis-3d-card:hover .aegis-glass-sheen {
+  opacity: 1;
+}
+
+.aegis-parallax-layer {
+  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 10px);
+  transition: transform 0.15s ease-out;
+}
+
+.aegis-parallax-reverse {
+  transform: translate3d(calc(var(--parallax-x, 0px) * -0.8), calc(var(--parallax-y, 0px) * -0.8), 6px);
+  transition: transform 0.15s ease-out;
+}
+
+/* Radar pulse animation */
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.radar-spinner {
+  animation: radar-sweep 5s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+/* Burn / Reveal Cinematic Transitions */
+@keyframes burn-reveal-anim {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+    filter: brightness(1.8) drop-shadow(0 0 20px #D6C6A5);
+    opacity: 0.2;
+  }
+  60% {
+    filter: brightness(1.2) drop-shadow(0 0 10px #6F947D);
+    opacity: 0.9;
+  }
+  100% {
+    clip-path: circle(140% at 50% 50%);
+    filter: brightness(1) drop-shadow(0 0 0 transparent);
+    opacity: 1;
+  }
+}
+
+.cinematic-burn-reveal {
+  animation: burn-reveal-anim 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes subtle-screen-shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, -2px); }
+  80% { transform: translate(1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+.screen-shake-subtle {
+  animation: subtle-screen-shake 0.35s ease-out;
+}
+
+@keyframes scanline-pass {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.simulation-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(201, 154, 69, 0.6), transparent);
+  box-shadow: 0 0 12px rgba(201, 154, 69, 0.8);
+  pointer-events: none;
+  z-index: 50;
+  animation: scanline-pass 3s linear infinite;
+}
+
+/* Alert pulse effects */
+@keyframes pulse-red-anim {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)); }
+  50% { opacity: 0.35; filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.3)); }
+}
+
+.pulse-red {
+  animation: pulse-red-anim 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-purple-anim {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.9)); }
+  50% { opacity: 0.4; filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.3)); }
+}
+
+.pulse-purple {
+  animation: pulse-purple-anim 2s ease-in-out infinite;
+}
+
+@keyframes river-flow {
+  0% { stroke-dashoffset: 40; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.flowing-river {
+  stroke-dasharray: 6 4;
+  animation: river-flow 2.5s linear infinite;
+}
+
+/* Button & Command Interface Controls */
+.btn-hud {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-hud);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  padding: 8px 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 13px;
+  border: 1px solid var(--border-medium);
+  background: rgba(18, 24, 34, 0.75);
+  color: #e2e8f0;
+  position: relative;
+  user-select: none;
+}
+
+.btn-hud:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-hud:active:not(:disabled) {
+  transform: scale(0.98) translateY(1px);
+  filter: brightness(0.95);
+}
+
+.btn-hud:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* 1. PRIMARY ACTION COMMAND CONTROLS */
+.btn-command-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--font-hud);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.22) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.6);
+  color: #e0f2fe;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  user-select: none;
+}
+
+/* Subtle corner notches on primary command buttons */
+.btn-command-primary::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid #22d3ee;
+  border-left: 2px solid #22d3ee;
+  pointer-events: none;
+}
+
+.btn-command-primary::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid #22d3ee;
+  border-right: 2px solid #22d3ee;
+  pointer-events: none;
+}
+
+.btn-command-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.35) 0%, rgba(6, 182, 212, 0.2) 100%);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 24px rgba(6, 182, 212, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-command-primary:hover:not(:disabled) .btn-arrow-icon {
+  transform: translateX(4px);
+  color: #38bdf8;
+}
+
+.btn-command-primary:active:not(:disabled) {
+  transform: scale(0.985) translateY(1px);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+.btn-command-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  box-shadow: none;
+}
+
+.btn-arrow-icon {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+/* 2. SECONDARY TACTICAL ACTIONS */
+.btn-command-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-hud);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 3px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+
+.btn-command-secondary:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(6, 182, 212, 0.5);
+  color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.btn-command-secondary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* 3. SYSTEM MODULE CARDS & CONTROLS */
+.system-module-box {
+  background: rgba(12, 17, 26, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 16px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.system-module-box:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.module-status-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chip-ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.chip-locked {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.chip-active {
+  background: rgba(6, 182, 212, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+/* 4. SIMULATION TIMELINE CONTROLS */
+.timeline-track-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  padding: 12px 18px;
+  background: rgba(10, 14, 22, 0.7);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.timeline-step-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 16px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.timeline-step-btn .node-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #0f172a;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.timeline-step-btn:hover .node-circle {
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+.timeline-step-btn.is-active .node-circle {
+  border-color: #f97316;
+  background: #f97316;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+}
+
+.timeline-step-btn .step-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  transition: color 0.2s ease;
+}
+
+.timeline-step-btn.is-active .step-label {
+  color: #fdba74;
+}
+
+/* 5. TACTICAL SECTOR PILLS */
+.zone-sector-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  font-family: var(--font-hud);
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.zone-sector-pill:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(6, 182, 212, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.zone-sector-pill.is-selected {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: #06b6d4;
+  color: #67e8f9;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+}
+
+.sector-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Tooltip micro-styling */
+.tactical-tooltip {
+  position: relative;
+}
+
+.tactical-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(9, 13, 20, 0.95);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.btn-hud-primary {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.5);
+  color: #67e8f9;
+}
+
+.btn-hud-primary:hover {
+  background: rgba(6, 182, 212, 0.3);
+  border-color: #22d3ee;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.3);
+}
+
+.btn-hud-active {
+  background: rgba(6, 182, 212, 0.25);
+  border-color: #06b6d4;
+  color: #ffffff;
+}
+
+.btn-hud-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.btn-hud-danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
+}
+
+/* Badges */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--font-hud);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.badge-stable {
+  background: var(--color-stable-bg);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.badge-warning {
+  background: var(--color-warning-bg);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge-high-risk {
+  background: var(--color-orange-bg);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.badge-critical {
+  background: var(--color-critical-bg);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+.badge-unknown {
+  background: var(--color-unknown-bg);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.45);
+}
+
+/* Key metric HUD cards */
+.metric-box {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  background: rgba(14, 19, 28, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-title {
+  font-family: var(--font-hud);
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #f1f5f9;
+}
+
+.metric-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Progress bars */
+.meter-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease-out;
+}
+
+/* Grid layout columns */
+.main-grid {
+  display: grid;
+  grid-template-columns: 290px 1fr 340px;
+  gap: 12px;
+  flex: 1;
+}
+
+@media (max-width: 1400px) {
+  .main-grid {
+    grid-template-columns: 260px 1fr 300px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Subtle background grain overlay */
+.aegis-grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Phase 8: Burn Transition for major stage advancement */
+@keyframes aegis-burn-out {
+  0% {
+    clip-path: circle(140% at 50% 50%);
+    filter: brightness(1) contrast(1);
+    opacity: 1;
+  }
+  35% {
+    filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 20px rgba(214, 195, 154, 0.6));
+  }
+  100% {
+    clip-path: circle(0% at 50% 50%);
+    filter: brightness(2) contrast(1.8) drop-shadow(0 0 40px rgba(231, 217, 184, 0.85));
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes aegis-burn-in {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  65% {
+    filter: brightness(1.2);
+  }
+  100% {
+    clip-path: circle(150% at 50% 50%);
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.aegis-burn-transition-exit {
+  animation: aegis-burn-out 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.aegis-burn-transition-enter {
+  animation: aegis-burn-in 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Magnetic Control Styles */
+.aegis-magnetic-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  will-change: transform;
+}
+
+.aegis-magnetic-control:active {
+  transform: scale(0.97) !important;
+}
+
+/* Phase 7: Cinematic Transitions (500-800ms) */
+@keyframes cinematic-stage-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.98) translateY(10px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes transition-digital-twin {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) scale(0.95) translateZ(-40px);
+    filter: blur(6px);
+  }
+  60% {
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) scale(1) translateZ(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes transition-investigate {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes transition-fuse {
+  0% {
+    opacity: 0;
+    transform: scale(1.03);
+    filter: brightness(1.25) contrast(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1) contrast(1);
+  }
+}
+
+@keyframes transition-simulation {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes transition-critical {
+  0% {
+    opacity: 0;
+    transform: scale(1.02);
+    box-shadow: inset 0 0 60px rgba(217, 83, 79, 0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+@keyframes transition-unknown {
+  0% {
+    opacity: 0;
+    filter: blur(8px) brightness(0.6);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1);
+  }
+}
+
+@keyframes cinematic-burn-reveal {
+  0% {
+    opacity: 0;
+    clip-path: circle(0% at 50% 50%);
+    filter: brightness(1.6) drop-shadow(0 0 30px rgba(214, 195, 154, 0.8));
+    transform: scale(1.03);
+  }
+  50% {
+    filter: brightness(1.2) drop-shadow(0 0 15px rgba(214, 195, 154, 0.4));
+  }
+  100% {
+    opacity: 1;
+    clip-path: circle(150% at 50% 50%);
+    filter: brightness(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes screen-shake-subtle {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-1px, 1px); }
+  40% { transform: translate(1px, -1px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+}
+
+.cinematic-stage-enter {
+  animation: cinematic-stage-enter 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.transition-digital-twin {
+  animation: transition-digital-twin 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.transition-investigate {
+  animation: transition-investigate 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.transition-fuse {
+  animation: transition-fuse 0.68s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.transition-simulation {
+  animation: transition-simulation 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.transition-critical {
+  animation: transition-critical 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.transition-unknown {
+  animation: transition-unknown 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.cinematic-burn-reveal {
+  animation: cinematic-burn-reveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.screen-shake-subtle {
+  animation: screen-shake-subtle 0.35s ease-in-out;
+}
+
