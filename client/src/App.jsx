@@ -14,7 +14,22 @@ import DeploymentAnimationScreen from './components/DeploymentAnimationScreen';
 import OutcomeScreen from './components/OutcomeScreen';
 import { AegisSystemFeedback } from './components/aegis-controls';
 import { AegisCursor, AegisLivingCanvas, AegisCinematicTransition } from './components/aegis-interactive';
-import { getState, resetState, getHealth, getZones, getIncidents, getResources } from './services/api';
+import AegisAuthModal from './components/AegisAuthModal';
+import AegisProfileDrawer from './components/AegisProfileDrawer';
+import AegisOperationsDeck from './components/AegisOperationsDeck';
+import AegisNewOperationModal from './components/AegisNewOperationModal';
+import { 
+  getState, 
+  resetState, 
+  getHealth, 
+  getMissions, 
+  getZones, 
+  getIncidents, 
+  getResources,
+  getMe,
+  logoutUser,
+  getAuthToken
+} from './services/api';
 import { WifiOff, Radio, Cpu, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -26,9 +41,25 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [isOffline, setIsOffline] = useState(false);
   const [syncState, setSyncState] = useState(null); // 'MISSION SYNCING' | 'ZONE TELEMETRY SYNCING' | 'FUSION ENGINE ACTIVE' | 'SIMULATION PROCESSING'
+
+  // AEGIS 2.0 Modes: 'DEMO' | 'LIVE'
+  const [mode, setMode] = useState('DEMO');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentOrg, setCurrentOrg] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
+
+  // Operations Deck & Multi-Mission Selection
+  const [activeView, setActiveView] = useState('MISSION'); // 'DECK' | 'MISSION'
+  const [activeMissionId, setActiveMissionId] = useState('027');
+  const [activeMission, setActiveMission] = useState(null);
+  const [missionsList, setMissionsList] = useState([]);
+  const [isNewOpModalOpen, setIsNewOpModalOpen] = useState(false);
   
   // Tactical State across mission
   const [activeStrategy, setActiveStrategy] = useState('ai');
+  const [activeExplanation, setActiveExplanation] = useState(null);
+  const [activeZoneId, setActiveZoneId] = useState('D');
   const [deployedPiece, setDeployedPiece] = useState({
     callsign: "AMBULANCE 02",
     type: "Advanced Life Support EMS",
@@ -44,21 +75,51 @@ export default function App() {
   };
 
   // Fetch world state and telemetries from backend via centralized API service
-  const fetchWorldState = useCallback(async (isInitial = false) => {
+  const fetchWorldState = useCallback(async (isInitial = false, targetMissionId = null) => {
+    const mId = targetMissionId || activeMissionId || '027';
     try {
       if (isInitial) {
-        setSyncState('MISSION SYNCING');
+        setSyncState('MISSION DATA SYNCING...');
       } else {
-        setSyncState('ZONE TELEMETRY SYNCING');
+        setSyncState('ZONE DATA SYNCING...');
       }
 
       // Check backend health & connectivity
-      await getHealth().catch(() => null);
+      const health = await getHealth().catch(() => null);
 
-      // Load primary mission state
-      const data = await getState();
-      setWorldState(data);
-      setIsOffline(false);
+      // Load primary mission state and REST resources
+      const [stateData, missionsData, zonesData, incidentsData, resourcesData, singleMission] = await Promise.all([
+        getState().catch(() => null),
+        getMissions().catch(() => null),
+        getZones(mId).catch(() => null),
+        getIncidents(mId).catch(() => null),
+        getResources(mId).catch(() => null),
+        getMission(mId).catch(() => null)
+      ]);
+
+      if (singleMission) {
+        setActiveMission(singleMission);
+      }
+      if (Array.isArray(missionsData)) {
+        setMissionsList(missionsData);
+      }
+
+      if (health || stateData || zonesData) {
+        setWorldState({
+          ...stateData,
+          missions: missionsData || stateData?.missions || [],
+          zones: (zonesData && zonesData.length > 0) ? zonesData : (stateData?.zones || []),
+          incidents: (incidentsData && incidentsData.length > 0) ? incidentsData : (stateData?.incidents || []),
+          resources: (resourcesData && resourcesData.length > 0) ? resourcesData : (stateData?.resources || []),
+          cityHealth: stateData?.cityHealth ?? 70,
+          activeAlerts: stateData?.activeAlerts ?? 7,
+          hospitalLoad: stateData?.hospitalLoad ?? 72,
+          unknownZones: stateData?.unknownZones ?? 1
+        });
+        setIsOffline(false);
+      } else {
+        setIsOffline(true);
+      }
     } catch (err) {
       console.warn("[AEGIS-API] Backend unavailable — operating in graceful OFFLINE / DEMO MODE.", err.message);
       setIsOffline(true);
@@ -67,11 +128,104 @@ export default function App() {
         setSyncState(null);
       }, 700);
     }
+  }, [activeMissionId]);
+
+  const fetchMissionsList = useCallback(async () => {
+    try {
+      const list = await getMissions();
+      if (Array.isArray(list)) {
+        setMissionsList(list);
+      }
+    } catch (err) {
+      console.warn('[AEGIS-API] Missions fetch fallback:', err.message);
+    }
   }, []);
 
   useEffect(() => {
     fetchWorldState(true);
-  }, [fetchWorldState]);
+
+    // Check for existing valid operator token
+    const token = getAuthToken();
+    if (token) {
+      getMe()
+        .then((res) => {
+          if (res?.user) {
+            setCurrentUser(res.user);
+            setCurrentOrg(res.organization || null);
+            setMode('LIVE');
+            setActiveView('DECK');
+            fetchMissionsList();
+          }
+        })
+        .catch(() => {
+          // Token expired or invalid
+          setCurrentUser(null);
+          setCurrentOrg(null);
+          setMode('DEMO');
+        });
+    }
+  }, [fetchWorldState, fetchMissionsList]);
+
+  const handleToggleMode = () => {
+    if (mode === 'DEMO') {
+      if (!currentUser) {
+        setIsAuthModalOpen(true);
+        showToast("OPERATOR AUTHENTICATION REQUIRED FOR LIVE OPERATION", "info");
+      } else {
+        setMode('LIVE');
+        setActiveView('DECK');
+        fetchMissionsList();
+        showToast(`> LIVE OPERATION ENGAGED // ${currentUser.role} ${currentUser.name}`, "success");
+      }
+    } else {
+      setMode('DEMO');
+      setActiveView('MISSION');
+      setActiveMissionId('027');
+      setActiveMission(null);
+      fetchWorldState(true, '027');
+      showToast("> DEMO / SIMULATION MODE ENGAGED // SCENARIO #027", "info");
+    }
+  };
+
+  const handleAuthSuccess = (user, organization) => {
+    setCurrentUser(user);
+    setCurrentOrg(organization || null);
+    setMode('LIVE');
+    setActiveView('DECK');
+    fetchMissionsList();
+    showToast(`> CLEARANCE VERIFIED // OPERATOR: ${user.role} ${user.name}`, "success");
+  };
+
+  const handleSelectOperation = (mission) => {
+    const mId = mission.missionId || mission.id || mission._id;
+    setActiveMissionId(mId);
+    setActiveMission(mission);
+    setActiveView('MISSION');
+    setCurrentStage('briefing');
+    fetchWorldState(true, mId);
+    showToast(`> THEATER ENGAGED // OPERATION #${mId}: ${mission.name}`, "success");
+  };
+
+  const handleOperationCreated = (newMission) => {
+    fetchMissionsList();
+    handleSelectOperation(newMission);
+    showToast(`> OPERATION COMMISSIONED // #${newMission.missionId}`, "success");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    }
+    setCurrentUser(null);
+    setCurrentOrg(null);
+    setMode('DEMO');
+    setActiveView('MISSION');
+    setActiveMissionId('027');
+    setActiveMission(null);
+    showToast("> SESSION TERMINATED // REVERTED TO DEMO MODE", "info");
+  };
 
   // Trigger contextual loading banners on major stage changes
   const handleStageSelect = (stageId) => {
@@ -90,8 +244,8 @@ export default function App() {
 
   const handleReset = async () => {
     try {
-      setSyncState('MISSION SYNCING');
-      await resetState();
+      setSyncState('MISSION DATA SYNCING...');
+      await resetState().catch(() => null);
       setCurrentStage('briefing');
       await fetchWorldState();
       showToast("> SYSTEM RESET // BASELINE SCENARIO RESTORED", "info");
@@ -168,9 +322,14 @@ export default function App() {
           }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
             <WifiOff size={11} color="#f59e0b" />
-            <span className="font-mono" style={{ fontSize: '10px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
-              OFFLINE / DEMO MODE
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+              <span className="font-mono" style={{ fontSize: '9px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
+                API OFFLINE
+              </span>
+              <span className="font-mono" style={{ fontSize: '8px', color: '#d6c6a5', letterSpacing: '0.06em' }}>
+                LOCAL SIMULATION ACTIVE
+              </span>
+            </div>
           </div>
         ) : (
           <div style={{
@@ -186,7 +345,7 @@ export default function App() {
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
             <Radio size={10} color="#6F947D" />
             <span className="font-mono" style={{ fontSize: '9px', color: '#a7f3d0', letterSpacing: '0.08em' }}>
-              AEGIS BACKEND LIVE
+              API CONNECTED
             </span>
           </div>
         )}
@@ -221,89 +380,127 @@ export default function App() {
         cityHealth={currentStage === 'outcome' ? 78 : currentStage === 'simulate' ? 61 : (worldState?.cityHealth || 70)}
         activeAlerts={currentStage === 'outcome' ? 2 : (worldState?.activeAlerts || 7)}
         hospitalLoad={currentStage === 'outcome' ? 64 : currentStage === 'simulate' ? 91 : (worldState?.hospitalLoad || 72)}
+        mode={mode}
+        onToggleMode={handleToggleMode}
+        currentUser={currentUser}
+        currentOrg={currentOrg}
+        activeMission={activeMission}
+        activeView={activeView}
+        onNavigateToDeck={() => setActiveView(activeView === 'DECK' ? 'MISSION' : 'DECK')}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileDrawerOpen(true)}
       />
 
-      {/* Dedicated Interactive Stage Screen wrapped in Cinematic Transition */}
+      {/* Dedicated Interactive Stage Screen or Operations Deck */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10 }}>
-        <AegisCinematicTransition stage={currentStage}>
-        
-        {/* STAGE 1: MISSION BRIEFING */}
-        {currentStage === 'briefing' && (
-          <MissionBriefingScreen
-            cityHealth={worldState?.cityHealth || 70}
-            activeAlerts={worldState?.activeAlerts || 7}
-            unknownZones={worldState?.unknownZones || 1}
-            onBeginOperation={() => {
-              handleStageSelect('investigate');
-              showToast("> OPERATION #027 INITIATED // LIVE SENSOR ARRAYS ONLINE", "info");
+        {activeView === 'DECK' ? (
+          <AegisOperationsDeck
+            missions={missionsList}
+            currentOrg={currentOrg}
+            currentUser={currentUser}
+            onSelectOperation={handleSelectOperation}
+            onOpenNewOperationModal={() => setIsNewOpModalOpen(true)}
+            onRefreshMissions={fetchMissionsList}
+            onEnterDemoMode={() => {
+              setMode('DEMO');
+              setActiveView('MISSION');
+              setActiveMissionId('027');
+              fetchWorldState(true, '027');
+              showToast("> PROTOTYPE DEMO MODE ENGAGED // SCENARIO #027", "info");
             }}
           />
-        )}
+        ) : (
+          <AegisCinematicTransition stage={currentStage}>
+          
+          {/* STAGE 1: MISSION BRIEFING */}
+          {currentStage === 'briefing' && (
+            <MissionBriefingScreen
+              cityHealth={worldState?.cityHealth || 70}
+              activeAlerts={worldState?.activeAlerts || 7}
+              unknownZones={worldState?.unknownZones || 1}
+              activeMission={activeMission}
+              onBeginOperation={() => {
+                handleStageSelect('investigate');
+                showToast(`> OPERATION #${activeMission?.missionId || '027'} INITIATED // LIVE SENSOR ARRAYS ONLINE`, "info");
+              }}
+            />
+          )}
 
-        {/* STAGE 2: INCIDENT INVESTIGATION */}
-        {currentStage === 'investigate' && (
-          <IncidentInvestigationScreen
-            onFuseIncident={() => {
-              handleStageSelect('fuse');
-              showToast("> MULTI-SIGNAL SYNTHESIS // 5 SOURCES CORRELATED", "success");
-            }}
-          />
-        )}
+          {/* STAGE 2: INCIDENT INVESTIGATION */}
+          {currentStage === 'investigate' && (
+            <IncidentInvestigationScreen
+              onFuseIncident={() => {
+                handleStageSelect('fuse');
+                showToast("> MULTI-SIGNAL SYNTHESIS // 5 SOURCES CORRELATED", "success");
+              }}
+            />
+          )}
 
-        {/* STAGE 3: INCIDENT FUSION */}
-        {currentStage === 'fuse' && (
-          <IncidentFusionScreen
-            onRevealDigitalTwin={() => {
-              handleStageSelect('map');
-              showToast("> DIGITAL TWIN MATRIX ONLINE // 5 SECTORS SYNCHRONIZED", "success");
-            }}
-          />
-        )}
+          {/* STAGE 3: INCIDENT FUSION */}
+          {currentStage === 'fuse' && (
+            <IncidentFusionScreen
+              onRevealDigitalTwin={() => {
+                handleStageSelect('map');
+                showToast("> DIGITAL TWIN MATRIX ONLINE // 5 SECTORS SYNCHRONIZED", "success");
+              }}
+            />
+          )}
 
-        {/* STAGE 4: DIGITAL TWIN HERO MAP */}
-        {currentStage === 'map' && (
-          <DigitalTwinScreen
-            zones={zones}
-            onExplainRisk={() => {
-              handleStageSelect('explain');
-              showToast("> TELEMETRY LINK ESTABLISHED // XAI FACTOR ATTRIBUTION LOADED", "info");
-            }}
-            onInvestigateUnknown={() => {
-              handleStageSelect('unknown');
-              showToast("> RECONNAISSANCE PROTOCOL ENGAGED // PROBING ZONE E BLACKOUT", "warning");
-            }}
-          />
-        )}
+          {/* STAGE 4: DIGITAL TWIN HERO MAP */}
+          {currentStage === 'map' && (
+            <DigitalTwinScreen
+              zones={zones}
+              activeMission={activeMission}
+              onExplainRisk={(exp, zid) => {
+                if (exp) setActiveExplanation(exp);
+                if (zid) setActiveZoneId(zid);
+                handleStageSelect('explain');
+                showToast("> TELEMETRY LINK ESTABLISHED // XAI FACTOR ATTRIBUTION LOADED", "info");
+              }}
+              onInvestigateUnknown={() => {
+                handleStageSelect('unknown');
+                showToast("> RECONNAISSANCE PROTOCOL ENGAGED // PROBING ZONE E BLACKOUT", "warning");
+              }}
+            />
+          )}
 
-        {/* STAGE 5: UNKNOWN ZONE INTELLIGENCE */}
-        {currentStage === 'unknown' && (
-          <UnknownZoneScreen
-            onProceedToExplain={() => {
-              handleStageSelect('explain');
-              showToast("> ZONE E BLACKOUT UNMASKED // ATTRIBUTION BREAKDOWN READY", "info");
-            }}
-            onZoneUpdated={(updatedZone) => {
-              showToast(`> SECTOR ${updatedZone.id} STATUS UPDATED // ${updatedZone.status}`, "warning");
-              fetchWorldState();
-            }}
-          />
-        )}
+          {/* STAGE 5: UNKNOWN ZONE INTELLIGENCE */}
+          {currentStage === 'unknown' && (
+            <UnknownZoneScreen
+              onProceedToExplain={() => {
+                handleStageSelect('explain');
+                showToast("> ZONE E BLACKOUT UNMASKED // ATTRIBUTION BREAKDOWN READY", "info");
+              }}
+              onZoneUpdated={(updatedZone) => {
+                showToast(`> SECTOR ${updatedZone.id} STATUS UPDATED // ${updatedZone.status}`, "warning");
+                fetchWorldState();
+              }}
+            />
+          )}
 
-        {/* STAGE 6: EXPLAINABLE AI (XAI) */}
-        {currentStage === 'explain' && (
-          <ExplainableAIScreen
-            onEnterCommandCenter={() => {
-              handleStageSelect('command');
-              showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
-            }}
-          />
-        )}
+          {/* STAGE 6: EXPLAINABLE AI (XAI) */}
+          {currentStage === 'explain' && (
+            <ExplainableAIScreen
+              explanation={activeExplanation}
+              zoneId={activeZoneId}
+              onEnterCommandCenter={() => {
+                handleStageSelect('command');
+                showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
+              }}
+            />
+          )}
 
-        {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
-        {currentStage === 'command' && (
-          <CommandCenterScreen
-            onCreatePlan={() => {
-              handleStageSelect('strategy');
+          {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
+          {currentStage === 'command' && (
+            <CommandCenterScreen
+              currentUser={currentUser}
+              currentOrg={currentOrg}
+              activeMission={activeMission}
+              onResourceAssigned={(unit, targetZone) => {
+                showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
+              }}
+              onCreatePlan={() => {
+                handleStageSelect('strategy');
               showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");
             }}
           />
@@ -383,7 +580,34 @@ export default function App() {
         )}
 
         </AegisCinematicTransition>
+        )}
       </main>
+
+      {/* AEGIS 2.0 Identification & Authentication Portal */}
+      <AegisAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* AEGIS Operator Dossier & Session Drawer */}
+      <AegisProfileDrawer
+        isOpen={isProfileDrawerOpen}
+        onClose={() => setIsProfileDrawerOpen(false)}
+        currentUser={currentUser}
+        currentOrg={currentOrg}
+        onLogout={handleLogout}
+        mode={mode}
+        onToggleMode={handleToggleMode}
+      />
+
+      {/* AEGIS 2.0 New Operation Provisioning Modal */}
+      <AegisNewOperationModal
+        isOpen={isNewOpModalOpen}
+        onClose={() => setIsNewOpModalOpen(false)}
+        onOperationCreated={handleOperationCreated}
+        currentOrg={currentOrg}
+      />
 
     </div>
   );

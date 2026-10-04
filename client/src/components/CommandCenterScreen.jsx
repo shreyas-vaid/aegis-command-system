@@ -14,11 +14,36 @@ import {
 } from 'lucide-react';
 import { AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
+import { assignResource } from '../services/api';
+import AegisWeatherWidget from './AegisWeatherWidget';
+import AegisFieldReports from './AegisFieldReports';
+import AegisIntelligenceModule from './AegisIntelligenceModule';
 
 export default function CommandCenterScreen({
-  onCreatePlan
+  onCreatePlan,
+  onResourceAssigned,
+  currentOrg = null,
+  currentUser = null,
+  activeMission = null
 }) {
   const [selectedUnit, setSelectedUnit] = useState(0);
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const handleUnitSelect = async (idx, res) => {
+    setSelectedUnit(idx);
+    setIsAssigning(true);
+    try {
+      const resourceId = res.name || res.callsign;
+      await assignResource(resourceId, 'D');
+      if (onResourceAssigned) {
+        onResourceAssigned(res, 'D');
+      }
+    } catch (err) {
+      console.warn('[AEGIS-API] Resource assignment fallback:', err.message);
+    } finally {
+      setTimeout(() => setIsAssigning(false), 350);
+    }
+  };
 
   const resources = [
     { callsign: "AMBULANCE 02", name: "AMBULANCE", count: 4, icon: HeartHandshake, color: "#6f947d", range: "14 KM", eta: "12 MIN", status: "AVAILABLE", desc: "Emergency medical triage & patient extraction" },
@@ -60,9 +85,45 @@ export default function CommandCenterScreen({
           <span className="font-hud" style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#d6c6a5', textTransform: 'uppercase' }}>
             COMMAND CENTER // RESOURCE LOGISTICS &amp; DEPLOYMENT
           </span>
+          {isAssigning && (
+            <div style={{ marginTop: '4px' }}>
+              <span className="font-mono" style={{ fontSize: '10px', color: '#38bdf8', letterSpacing: '0.1em', animation: 'pulse 1.5s infinite ease-in-out' }}>
+                ● RESOURCE DISPATCH SYNCING...
+              </span>
+            </div>
+          )}
           <h2 className="font-hud" style={{ fontSize: '30px', fontWeight: '800', color: '#eae5d8', margin: '4px 0 0 0', letterSpacing: '0.04em' }}>
             TACTICAL DEPLOYMENT MATRIX
           </h2>
+        </div>
+
+        {/* Organization Operational Context Banner */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(8, 13, 10, 0.75)',
+          padding: '10px 16px',
+          borderRadius: '4px',
+          border: '1px solid rgba(214, 198, 165, 0.16)',
+          borderLeft: '3px solid #6F947D'
+        }}>
+          <div>
+            <span className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em', display: 'block' }}>
+              JURISDICTION / ORGANIZATION
+            </span>
+            <span className="font-hud" style={{ fontSize: '13px', fontWeight: '700', color: '#EAE5D8' }}>
+              {currentOrg?.name || (activeMission?.locationName ? `${activeMission.locationName} Emergency Command` : 'Regional Emergency Operations Command')}
+            </span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em', display: 'block' }}>
+              ACTIVE THEATER OPERATION
+            </span>
+            <span className="font-mono" style={{ fontSize: '11px', color: '#4ADE80', fontWeight: '700' }}>
+              ● {(activeMission?.name || 'FLASH FLOOD CASCADE').toUpperCase()} (#{activeMission?.missionId || '027'})
+            </span>
+          </div>
         </div>
 
         {/* Compact Operational Metrics Bar */}
@@ -106,6 +167,23 @@ export default function CommandCenterScreen({
           </p>
         </div>
 
+        {/* Unified Operational Telemetry Trio: Fused Intelligence | Live Weather | Field Observations */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '14px', alignItems: 'start' }}>
+          <AegisIntelligenceModule
+            missionId={activeMission?.missionId || '027'}
+            activeMission={activeMission}
+          />
+          <AegisWeatherWidget
+            missionId={activeMission?.missionId || '027'}
+            locationName={activeMission?.locationName || 'CHANDIGARH'}
+          />
+          <AegisFieldReports
+            missionId={activeMission?.missionId || '027'}
+            activeMission={activeMission}
+            currentUser={currentUser}
+          />
+        </div>
+
         {/* 6 Interactive Resource Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
           {resources.map((res, idx) => {
@@ -115,7 +193,7 @@ export default function CommandCenterScreen({
               <div
                 key={idx}
                 data-cursor="deploy"
-                onClick={() => setSelectedUnit(idx)}
+                onClick={() => handleUnitSelect(idx, res)}
                 style={{ cursor: 'pointer' }}
               >
                 <Aegis3DCard

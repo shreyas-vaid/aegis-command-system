@@ -1,37 +1,47 @@
+/**
+ * AEGIS Database Configuration
+ * Reusable Mongoose connection with friendly error handling.
+ */
+
 import mongoose from 'mongoose';
 
-let isConnected = false;
-let useInMemory = false;
-
-/**
- * Connect to MongoDB if MONGODB_URI is configured.
- * Falls back to in-memory data store for local development.
- */
 export async function connectDB() {
   const uri = process.env.MONGODB_URI;
 
   if (!uri || uri.trim() === '') {
-    console.log('[AEGIS-DB] No MONGODB_URI configured — running with IN-MEMORY data store.');
-    console.log('[AEGIS-DB] Set MONGODB_URI in .env to enable persistence.');
-    useInMemory = true;
-    return;
+    console.error('\n==================================================');
+    console.error('AEGIS DATABASE CONFIGURATION ERROR');
+    console.error('Missing MONGODB_URI in environment variables.');
+    console.error('Please configure your MongoDB connection string in:');
+    console.error('  server/.env');
+    console.error('Example:');
+    console.error('  MONGODB_URI=mongodb://127.0.0.1:27017/aegis');
+    console.error('  or MongoDB Atlas URI');
+    console.error('==================================================\n');
+    throw new Error('MONGODB_URI is missing in server/.env');
   }
 
   try {
-    await mongoose.connect(uri);
-    isConnected = true;
-    console.log('[AEGIS-DB] MongoDB connected successfully.');
+    const conn = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000
+    });
+    console.log(`AEGIS DATABASE CONNECTED: ${conn.connection.host}/${conn.connection.name}`);
+    return conn;
   } catch (err) {
-    console.error('[AEGIS-DB] MongoDB connection failed:', err.message);
-    console.log('[AEGIS-DB] Falling back to IN-MEMORY data store.');
-    useInMemory = true;
+    console.error('\n==================================================');
+    console.error('AEGIS DATABASE CONNECTION FAILED');
+    console.error('Reason:', err.message);
+    console.error('==================================================\n');
+    throw err;
   }
 }
 
-export function isUsingInMemory() {
-  return useInMemory;
+export function isDBConnected() {
+  return mongoose.connection.readyState === 1;
 }
 
-export function isDBConnected() {
-  return isConnected;
+export async function closeDB() {
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
 }

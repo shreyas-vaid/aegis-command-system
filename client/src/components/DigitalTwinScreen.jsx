@@ -22,11 +22,14 @@ import {
   AegisZoneHoverCard 
 } from './aegis-controls';
 import { AegisAnimatedNumber, Aegis3DCard } from './aegis-interactive';
+import { getZone, getZoneExplanation } from '../services/api';
+import AegisWeatherWidget from './AegisWeatherWidget';
 
 export default function DigitalTwinScreen({
   zones = [],
   onExplainRisk,
-  onInvestigateUnknown
+  onInvestigateUnknown,
+  activeMission = null
 }) {
   const [activeZoneId, setActiveZoneId] = useState('D');
   const [panelOpen, setPanelOpen] = useState(true);
@@ -49,8 +52,54 @@ export default function DigitalTwinScreen({
     { id: "E", name: "DELTA", risk: "?", status: "UNKNOWN", color: "#8b72a8", bg: "rgba(139, 114, 168, 0.16)" }
   ];
 
-  const zoneData = zoneDefaults[activeZoneId] || zoneDefaults.D;
+  const [zoneOverrides, setZoneOverrides] = useState({});
+  const [isSyncingZone, setIsSyncingZone] = useState(false);
+
+  const baseZone = zoneDefaults[activeZoneId] || zoneDefaults.D;
+  const zoneData = { ...baseZone, ...(zoneOverrides[activeZoneId] || {}) };
   const isZoneE = activeZoneId === 'E';
+
+  const handleSelectZone = async (zid) => {
+    setActiveZoneId(zid);
+    setPanelOpen(true);
+    setIsSyncingZone(true);
+    try {
+      const fetched = await getZone(zid);
+      if (fetched) {
+        setZoneOverrides(prev => ({
+          ...prev,
+          [zid]: {
+            ...prev[zid],
+            risk: fetched.risk !== undefined ? fetched.risk : prev[zid]?.risk,
+            health: fetched.health !== undefined ? fetched.health : (fetched.risk !== undefined ? Math.max(1, 100 - fetched.risk) : prev[zid]?.health),
+            roads: fetched.roadAccess !== undefined ? fetched.roadAccess : prev[zid]?.roads,
+            infrastructure: fetched.infrastructure !== undefined ? fetched.infrastructure : prev[zid]?.infrastructure,
+            reports: fetched.reportsCount !== undefined ? fetched.reportsCount : prev[zid]?.reports,
+            connectivity: fetched.connectivity !== undefined ? fetched.connectivity : prev[zid]?.connectivity,
+            status: fetched.status || prev[zid]?.status,
+            population: fetched.population || prev[zid]?.population,
+            hospitalAccess: fetched.hospitalAccess ? `${fetched.hospitalAccess}% INTAKE` : prev[zid]?.hospitalAccess
+          }
+        }));
+      }
+    } catch (err) {
+      console.warn(`[AEGIS-API] Sector ${zid} telemetry fallback:`, err.message);
+    } finally {
+      setTimeout(() => setIsSyncingZone(false), 350);
+    }
+  };
+
+  const handleExplain = async () => {
+    try {
+      setIsSyncingZone(true);
+      const explanation = await getZoneExplanation(activeZoneId).catch(() => null);
+      if (onExplainRisk) {
+        onExplainRisk(explanation, activeZoneId);
+      }
+    } finally {
+      setTimeout(() => setIsSyncingZone(false), 300);
+    }
+  };
 
   return (
     <div style={{
@@ -67,11 +116,16 @@ export default function DigitalTwinScreen({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span className="font-hud" style={{ fontSize: '13px', letterSpacing: '0.14em', color: '#d6c6a5', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ display: 'inline-block', width: '6px', height: '6px', background: '#6f947d', borderRadius: '50%' }}></span>
-            STAGE 4 // DIGITAL TWIN TOPOLOGY &amp; ZONE RISK MATRIX
+            STAGE 4 // DIGITAL TWIN · {activeMission?.locationName?.toUpperCase() || 'TOPOLOGY'}
           </span>
           <span className="font-mono" style={{ fontSize: '11px', color: '#9fb5a4' }}>
-            SELECT TACTICAL SECTORS (A–E) TO PROBE TELEMETRY
+            {activeMission?.latitude ? `${activeMission.latitude.toFixed(4)}° N, ${activeMission.longitude.toFixed(4)}° E` : 'COORDINATES ACTIVE'} · {activeMission?.name?.toUpperCase() || 'ZONE RISK MATRIX'}
           </span>
+          {isSyncingZone && (
+            <span className="font-mono" style={{ fontSize: '10px', color: '#38bdf8', letterSpacing: '0.1em', animation: 'pulse 1.5s infinite ease-in-out' }}>
+              ● ZONE DATA SYNCING...
+            </span>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -93,11 +147,9 @@ export default function DigitalTwinScreen({
           zones={zones}
           selectedZoneId={activeZoneId}
           hoveredZoneId={hoveredZoneId}
-          onSelectZone={(zid) => {
-            setActiveZoneId(zid);
-            setPanelOpen(true);
-          }}
+          onSelectZone={handleSelectZone}
           timeOffset={0}
+          activeMission={activeMission}
         />
 
         {/* Floating Technical Readout on Hover */}
@@ -118,10 +170,7 @@ export default function DigitalTwinScreen({
           <AegisSectorControl
             sectors={sectorList}
             selectedId={activeZoneId}
-            onSelectSector={(id) => {
-              setActiveZoneId(id);
-              setPanelOpen(true);
-            }}
+            onSelectSector={handleSelectZone}
             onHoverSector={(id) => setHoveredZoneId(id)}
           />
         </div>
@@ -250,6 +299,15 @@ export default function DigitalTwinScreen({
               </p>
             </div>
 
+            {/* Live Atmospheric Intelligence in Sector Dossier */}
+            <div style={{ marginTop: '8px', marginBottom: '4px' }}>
+              <AegisWeatherWidget
+                missionId={activeMission?.missionId || '027'}
+                locationName={activeMission?.locationName || 'THEATER'}
+                compact={true}
+              />
+            </div>
+
             {/* Command Modules in Drawer (EXPLAIN RISK & INVESTIGATE) */}
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(214, 198, 165, 0.12)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -259,7 +317,7 @@ export default function DigitalTwinScreen({
                   detail="WEIGHT MODEL"
                   status="READY"
                   icon="◉"
-                  onClick={onExplainRisk}
+                  onClick={handleExplain}
                   variant="sage"
                 />
 

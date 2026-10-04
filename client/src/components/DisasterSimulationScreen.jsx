@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   GitFork, 
   ArrowDown, 
@@ -12,18 +12,57 @@ import {
 
 import { AegisTimeControl, AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
+import { runSimulation } from '../services/api';
 
 export default function DisasterSimulationScreen({
   onProceedToChess
 }) {
   const [timeOffset, setTimeOffset] = useState(0);
+  const [simData, setSimData] = useState(null);
+  const [isSimulating, setIsSimulating] = useState(false);
 
-  // Dynamic values that evolve with timeOffset matching exact specs
-  const road17Val = timeOffset === 0 ? 22 : timeOffset === 15 ? 12 : timeOffset === 30 ? 4 : 0;
-  const hospitalLoad = timeOffset === 0 ? 72 : timeOffset === 15 ? 81 : timeOffset === 30 ? 91 : 98;
-  const zoneDRisk = timeOffset === 0 ? 89 : timeOffset === 15 ? 92 : timeOffset === 30 ? 96 : 99;
-  const zoneEStatus = timeOffset === 0 ? "UNKNOWN" : timeOffset === 15 ? "WARNING" : "CRITICAL";
-  const cityHealth = timeOffset === 0 ? 70 : timeOffset === 15 ? 67 : timeOffset === 30 ? 61 : 54;
+  useEffect(() => {
+    let isMounted = true;
+    setIsSimulating(true);
+    runSimulation({
+      missionId: '027',
+      timeOffset,
+      actions: []
+    })
+      .then(res => {
+        if (isMounted && res) {
+          setSimData(res);
+        }
+      })
+      .catch(err => {
+        console.warn('[AEGIS-API] Forward simulation fallback:', err.message);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setTimeout(() => setIsSimulating(false), 300);
+        }
+      });
+
+    return () => { isMounted = false; };
+  }, [timeOffset]);
+
+  // Dynamic values that evolve with timeOffset matching exact specs with backend sync
+  const fallbackRoad17 = timeOffset === 0 ? 22 : timeOffset === 15 ? 12 : timeOffset === 30 ? 4 : 0;
+  const fallbackHospital = timeOffset === 0 ? 72 : timeOffset === 15 ? 81 : timeOffset === 30 ? 91 : 98;
+  const fallbackZoneDRisk = timeOffset === 0 ? 89 : timeOffset === 15 ? 92 : timeOffset === 30 ? 96 : 99;
+  const fallbackZoneEStatus = timeOffset === 0 ? "UNKNOWN" : timeOffset === 15 ? "WARNING" : "CRITICAL";
+  const fallbackCityHealth = timeOffset === 0 ? 70 : timeOffset === 15 ? 67 : timeOffset === 30 ? 61 : 54;
+
+  const zoneD = simData?.zones?.find(z => (z.zoneId || z.id) === 'D');
+  const zoneE = simData?.zones?.find(z => (z.zoneId || z.id) === 'E');
+
+  const road17Val = zoneD?.roadAccess !== undefined ? zoneD.roadAccess : fallbackRoad17;
+  const hospitalLoad = simData?.hospitalStatus?.includes('94%') ? 94 : (timeOffset >= 30 ? 91 : fallbackHospital);
+  const zoneDRisk = zoneD?.risk !== undefined ? zoneD.risk : fallbackZoneDRisk;
+  const zoneEStatus = zoneE?.status !== undefined ? (zoneE.status === 'CRITICAL' ? 'CRITICAL' : zoneE.status === 'HIGH_RISK' ? 'WARNING' : zoneE.status) : fallbackZoneEStatus;
+  const cityHealth = simData?.zones?.length
+    ? Math.round(simData.zones.reduce((sum, z) => sum + (z.health || (100 - z.risk)), 0) / simData.zones.length)
+    : fallbackCityHealth;
 
   return (
     <div style={{
@@ -62,6 +101,11 @@ export default function DisasterSimulationScreen({
               <span className="font-mono" style={{ fontSize: '11px', color: '#9fb5a4' }}>
                 FORWARD CASCADE PROJECTION
               </span>
+              {isSimulating && (
+                <span className="font-mono" style={{ fontSize: '10px', color: '#38bdf8', letterSpacing: '0.1em', animation: 'pulse 1.5s infinite ease-in-out' }}>
+                  ● SIMULATION SYNCING...
+                </span>
+              )}
             </div>
             <h2 className="font-hud" style={{ fontSize: '28px', fontWeight: '800', color: '#eae5d8', margin: '4px 0 0 0', letterSpacing: '0.04em' }}>
               TEMPORAL SIMULATION CONSOLE
