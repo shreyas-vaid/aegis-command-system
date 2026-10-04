@@ -16,6 +16,8 @@ import { AegisSystemFeedback } from './components/aegis-controls';
 import { AegisCursor, AegisLivingCanvas, AegisCinematicTransition } from './components/aegis-interactive';
 import AegisAuthModal from './components/AegisAuthModal';
 import AegisProfileDrawer from './components/AegisProfileDrawer';
+import AegisOperationsDeck from './components/AegisOperationsDeck';
+import AegisNewOperationModal from './components/AegisNewOperationModal';
 import { 
   getState, 
   resetState, 
@@ -46,6 +48,13 @@ export default function App() {
   const [currentOrg, setCurrentOrg] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
+
+  // Operations Deck & Multi-Mission Selection
+  const [activeView, setActiveView] = useState('MISSION'); // 'DECK' | 'MISSION'
+  const [activeMissionId, setActiveMissionId] = useState('027');
+  const [activeMission, setActiveMission] = useState(null);
+  const [missionsList, setMissionsList] = useState([]);
+  const [isNewOpModalOpen, setIsNewOpModalOpen] = useState(false);
   
   // Tactical State across mission
   const [activeStrategy, setActiveStrategy] = useState('ai');
@@ -66,7 +75,8 @@ export default function App() {
   };
 
   // Fetch world state and telemetries from backend via centralized API service
-  const fetchWorldState = useCallback(async (isInitial = false) => {
+  const fetchWorldState = useCallback(async (isInitial = false, targetMissionId = null) => {
+    const mId = targetMissionId || activeMissionId || '027';
     try {
       if (isInitial) {
         setSyncState('MISSION DATA SYNCING...');
@@ -78,13 +88,21 @@ export default function App() {
       const health = await getHealth().catch(() => null);
 
       // Load primary mission state and REST resources
-      const [stateData, missionsData, zonesData, incidentsData, resourcesData] = await Promise.all([
+      const [stateData, missionsData, zonesData, incidentsData, resourcesData, singleMission] = await Promise.all([
         getState().catch(() => null),
         getMissions().catch(() => null),
-        getZones('027').catch(() => null),
-        getIncidents('027').catch(() => null),
-        getResources('027').catch(() => null)
+        getZones(mId).catch(() => null),
+        getIncidents(mId).catch(() => null),
+        getResources(mId).catch(() => null),
+        getMission(mId).catch(() => null)
       ]);
+
+      if (singleMission) {
+        setActiveMission(singleMission);
+      }
+      if (Array.isArray(missionsData)) {
+        setMissionsList(missionsData);
+      }
 
       if (health || stateData || zonesData) {
         setWorldState({
@@ -110,6 +128,17 @@ export default function App() {
         setSyncState(null);
       }, 700);
     }
+  }, [activeMissionId]);
+
+  const fetchMissionsList = useCallback(async () => {
+    try {
+      const list = await getMissions();
+      if (Array.isArray(list)) {
+        setMissionsList(list);
+      }
+    } catch (err) {
+      console.warn('[AEGIS-API] Missions fetch fallback:', err.message);
+    }
   }, []);
 
   useEffect(() => {
@@ -124,6 +153,8 @@ export default function App() {
             setCurrentUser(res.user);
             setCurrentOrg(res.organization || null);
             setMode('LIVE');
+            setActiveView('DECK');
+            fetchMissionsList();
           }
         })
         .catch(() => {
@@ -133,7 +164,7 @@ export default function App() {
           setMode('DEMO');
         });
     }
-  }, [fetchWorldState]);
+  }, [fetchWorldState, fetchMissionsList]);
 
   const handleToggleMode = () => {
     if (mode === 'DEMO') {
@@ -142,10 +173,16 @@ export default function App() {
         showToast("OPERATOR AUTHENTICATION REQUIRED FOR LIVE OPERATION", "info");
       } else {
         setMode('LIVE');
+        setActiveView('DECK');
+        fetchMissionsList();
         showToast(`> LIVE OPERATION ENGAGED // ${currentUser.role} ${currentUser.name}`, "success");
       }
     } else {
       setMode('DEMO');
+      setActiveView('MISSION');
+      setActiveMissionId('027');
+      setActiveMission(null);
+      fetchWorldState(true, '027');
       showToast("> DEMO / SIMULATION MODE ENGAGED // SCENARIO #027", "info");
     }
   };
@@ -154,7 +191,25 @@ export default function App() {
     setCurrentUser(user);
     setCurrentOrg(organization || null);
     setMode('LIVE');
+    setActiveView('DECK');
+    fetchMissionsList();
     showToast(`> CLEARANCE VERIFIED // OPERATOR: ${user.role} ${user.name}`, "success");
+  };
+
+  const handleSelectOperation = (mission) => {
+    const mId = mission.missionId || mission.id || mission._id;
+    setActiveMissionId(mId);
+    setActiveMission(mission);
+    setActiveView('MISSION');
+    setCurrentStage('briefing');
+    fetchWorldState(true, mId);
+    showToast(`> THEATER ENGAGED // OPERATION #${mId}: ${mission.name}`, "success");
+  };
+
+  const handleOperationCreated = (newMission) => {
+    fetchMissionsList();
+    handleSelectOperation(newMission);
+    showToast(`> OPERATION COMMISSIONED // #${newMission.missionId}`, "success");
   };
 
   const handleLogout = async () => {
@@ -166,6 +221,9 @@ export default function App() {
     setCurrentUser(null);
     setCurrentOrg(null);
     setMode('DEMO');
+    setActiveView('MISSION');
+    setActiveMissionId('027');
+    setActiveMission(null);
     showToast("> SESSION TERMINATED // REVERTED TO DEMO MODE", "info");
   };
 
@@ -326,17 +384,37 @@ export default function App() {
         onToggleMode={handleToggleMode}
         currentUser={currentUser}
         currentOrg={currentOrg}
+        activeMission={activeMission}
+        activeView={activeView}
+        onNavigateToDeck={() => setActiveView(activeView === 'DECK' ? 'MISSION' : 'DECK')}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileDrawerOpen(true)}
       />
 
-      {/* Dedicated Interactive Stage Screen wrapped in Cinematic Transition */}
+      {/* Dedicated Interactive Stage Screen or Operations Deck */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10 }}>
-        <AegisCinematicTransition stage={currentStage}>
-        
-        {/* STAGE 1: MISSION BRIEFING */}
-        {currentStage === 'briefing' && (
-          <MissionBriefingScreen
+        {activeView === 'DECK' ? (
+          <AegisOperationsDeck
+            missions={missionsList}
+            currentOrg={currentOrg}
+            currentUser={currentUser}
+            onSelectOperation={handleSelectOperation}
+            onOpenNewOperationModal={() => setIsNewOpModalOpen(true)}
+            onRefreshMissions={fetchMissionsList}
+            onEnterDemoMode={() => {
+              setMode('DEMO');
+              setActiveView('MISSION');
+              setActiveMissionId('027');
+              fetchWorldState(true, '027');
+              showToast("> PROTOTYPE DEMO MODE ENGAGED // SCENARIO #027", "info");
+            }}
+          />
+        ) : (
+          <AegisCinematicTransition stage={currentStage}>
+          
+          {/* STAGE 1: MISSION BRIEFING */}
+          {currentStage === 'briefing' && (
+            <MissionBriefingScreen
             cityHealth={worldState?.cityHealth || 70}
             activeAlerts={worldState?.activeAlerts || 7}
             unknownZones={worldState?.unknownZones || 1}
@@ -499,6 +577,7 @@ export default function App() {
         )}
 
         </AegisCinematicTransition>
+        )}
       </main>
 
       {/* AEGIS 2.0 Identification & Authentication Portal */}
@@ -517,6 +596,14 @@ export default function App() {
         onLogout={handleLogout}
         mode={mode}
         onToggleMode={handleToggleMode}
+      />
+
+      {/* AEGIS 2.0 New Operation Provisioning Modal */}
+      <AegisNewOperationModal
+        isOpen={isNewOpModalOpen}
+        onClose={() => setIsNewOpModalOpen(false)}
+        onOperationCreated={handleOperationCreated}
+        currentOrg={currentOrg}
       />
 
     </div>

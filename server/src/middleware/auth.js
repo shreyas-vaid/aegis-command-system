@@ -144,3 +144,60 @@ export function requireOrganizationAccess(paramName = 'id') {
   };
 }
 
+/**
+ * Optional authentication middleware:
+ * Populates req.user if a valid Bearer token is provided, otherwise proceeds without failing.
+ */
+export async function optionalAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      req.user = null;
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (err) {
+      req.user = null;
+      return next();
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      const user = await User.findById(decoded.id).select('-passwordHash').lean();
+      if (user) {
+        req.user = {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          organizationId: user.organizationId,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        };
+      } else {
+        req.user = null;
+      }
+    } else {
+      req.user = {
+        id: decoded.id,
+        name: decoded.name,
+        email: decoded.email,
+        role: decoded.role,
+        organizationId: decoded.organizationId
+      };
+    }
+
+    next();
+  } catch (err) {
+    req.user = null;
+    next();
+  }
+}

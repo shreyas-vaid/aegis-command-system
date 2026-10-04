@@ -158,6 +158,12 @@ export function updateMission(id, data) {
   });
 }
 
+export function archiveMission(id) {
+  return request(`/api/missions/${id}`, {
+    method: 'DELETE'
+  });
+}
+
 // ─── STATE (Legacy) ──────────────────────────────────────────────────
 export function getState() {
   return request('/api/state');

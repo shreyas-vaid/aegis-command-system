@@ -25,6 +25,7 @@ import Organization from './models/Organization.js';
 // Routes & Middleware
 import authRoutes from './routes/authRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
+import missionRoutes from './routes/missionRoutes.js';
 import { requireAuth } from './middleware/auth.js';
 import { getMe } from './controllers/authController.js';
 
@@ -79,35 +80,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ─── 2. MISSIONS API ─────────────────────────────────────────────────
-// GET /api/missions — Return all missions
-app.get('/api/missions', async (req, res) => {
-  try {
-    const missions = await Mission.find().lean();
-    res.status(200).json(missions);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch missions", details: err.message });
-  }
-});
-
-// GET /api/missions/:id — Return single mission details
-app.get('/api/missions/:id', async (req, res) => {
-  try {
-    const mission = await Mission.findOne({ missionId: req.params.id }).lean();
-    if (!mission) {
-      return res.status(404).json({ error: "Mission not found" });
-    }
-    res.status(200).json(mission);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch mission", details: err.message });
-  }
-});
+// ─── 2. MISSIONS / OPERATIONS API ────────────────────────────────────
+app.use('/api/missions', missionRoutes);
 
 // ─── 3. MISSION-SCOPED NESTED ENDPOINTS ──────────────────────────────
 // GET /api/missions/:id/zones — Return sectors for this mission
 app.get('/api/missions/:id/zones', async (req, res) => {
   try {
-    const zones = await Zone.find({ missionId: req.params.id }).lean();
+    let zones = await Zone.find({ missionId: req.params.id }).lean();
+    if (!zones || zones.length === 0) {
+      // Fallback to standard sector layout if newly created operation
+      zones = await Zone.find({ missionId: "027" }).lean();
+    }
     res.status(200).json(zones);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch zones", details: err.message });
@@ -117,7 +101,10 @@ app.get('/api/missions/:id/zones', async (req, res) => {
 // GET /api/missions/:id/incidents — Return incidents for this mission
 app.get('/api/missions/:id/incidents', async (req, res) => {
   try {
-    const incidents = await Incident.find({ missionId: req.params.id }).lean();
+    let incidents = await Incident.find({ missionId: req.params.id }).lean();
+    if (!incidents || incidents.length === 0) {
+      incidents = await Incident.find({ missionId: "027" }).lean();
+    }
     res.status(200).json(incidents);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch incidents", details: err.message });
@@ -127,7 +114,10 @@ app.get('/api/missions/:id/incidents', async (req, res) => {
 // GET /api/missions/:id/resources — Return available resources for this mission
 app.get('/api/missions/:id/resources', async (req, res) => {
   try {
-    const resources = await Resource.find({ missionId: req.params.id }).lean();
+    let resources = await Resource.find({ missionId: req.params.id }).lean();
+    if (!resources || resources.length === 0) {
+      resources = await Resource.find({ missionId: "027" }).lean();
+    }
     res.status(200).json(resources);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch resources", details: err.message });

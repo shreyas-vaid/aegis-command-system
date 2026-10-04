@@ -14,11 +14,17 @@ import Mission from '../models/Mission.js';
 import Zone from '../models/Zone.js';
 import Incident from '../models/Incident.js';
 import Resource from '../models/Resource.js';
+import Organization from '../models/Organization.js';
+import { getOrCreateDefaultOrg, DEFAULT_DEMO_ORG } from '../services/organizationService.js';
 
 export const DEMO_MISSION = {
   missionId: "027",
   name: "Flash Flood Cascade",
-  disasterType: "FLASH_FLOOD",
+  description: "Torrential storm cell stalled over River Basin. Flood waters cresting at +3.4m, threatening urban sectors.",
+  disasterType: "FLOOD",
+  locationName: "Chandigarh",
+  latitude: 30.7333,
+  longitude: 76.7794,
   severity: "CRITICAL",
   status: "ACTIVE"
 };
@@ -195,6 +201,10 @@ export const DEMO_RESOURCES = [
 export async function seedDatabase() {
   console.log('Connecting to MongoDB for seeding...');
   await connectDB();
+
+  // Ensure default demo organization exists
+  const demoOrg = await getOrCreateDefaultOrg();
+  DEMO_MISSION.organizationId = demoOrg._id;
 
   // 1. Clear existing AEGIS seed data
   await Promise.all([

@@ -16,7 +16,7 @@ const VALID_ROLES = ['ADMIN', 'COMMANDER', 'ANALYST', 'FIELD_OPERATOR', 'VIEWER'
  */
 export async function register(req, res) {
   try {
-    const { name, email, password, role = 'COMMANDER', organizationId = null } = req.body || {};
+    const { name, email, password, role = 'COMMANDER', organizationId = null, organizationName = null } = req.body || {};
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name is required' });
@@ -40,7 +40,7 @@ export async function register(req, res) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    let targetOrgId = organizationId;
+    let targetOrgId = organizationId || organizationName;
 
     if (mongoose.connection.readyState === 1) {
       // Check if user already exists
@@ -49,12 +49,21 @@ export async function register(req, res) {
         return res.status(409).json({ error: 'Email already registered' });
       }
 
-      // If no org specified or invalid, bind to default demo org
+      // If no org specified or invalid, bind to default demo org or create from organizationName
       let org = null;
       if (targetOrgId && mongoose.Types.ObjectId.isValid(targetOrgId)) {
         org = await Organization.findById(targetOrgId);
       } else if (targetOrgId) {
         org = await Organization.findOne({ name: targetOrgId });
+      }
+
+      if (!org && organizationName && organizationName.trim()) {
+        org = await Organization.create({
+          name: organizationName.trim(),
+          type: 'EMERGENCY_RESPONSE',
+          location: 'Regional Command Center',
+          description: `Operational agency: ${organizationName.trim()}`
+        });
       }
 
       if (!org) {

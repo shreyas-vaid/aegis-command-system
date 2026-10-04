@@ -8,7 +8,8 @@ import {
   Radio,
   Lock,
   User,
-  UserCheck
+  UserCheck,
+  Layers
 } from 'lucide-react';
 
 import { AegisMissionRail } from './aegis-controls';
@@ -26,6 +27,9 @@ export default function MissionNavBar({
   onToggleMode,
   currentUser = null,
   currentOrg = null,
+  activeMission = null,
+  activeView = 'MISSION',
+  onNavigateToDeck,
   onOpenAuth,
   onOpenProfile
 }) {
@@ -106,13 +110,36 @@ export default function MissionNavBar({
               </button>
 
               <span className="font-mono" style={{ fontSize: '10px', background: 'rgba(217, 83, 79, 0.2)', border: '1px solid rgba(217, 83, 79, 0.45)', color: '#FCA5A5', padding: '1px 6px', borderRadius: '2px', fontWeight: '700' }}>
-                OPERATION #027
+                OPERATION #{activeMission?.missionId || '027'}
               </span>
+
+              {mode === 'LIVE' && onNavigateToDeck && (
+                <button
+                  onClick={onNavigateToDeck}
+                  className="font-mono"
+                  style={{
+                    fontSize: '9px',
+                    padding: '2px 7px',
+                    background: activeView === 'DECK' ? 'rgba(111, 148, 125, 0.25)' : 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(214, 198, 165, 0.25)',
+                    color: activeView === 'DECK' ? '#A7F3D0' : '#D6C6A5',
+                    borderRadius: '2px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="Switch between Operations Deck and Mission Theater"
+                >
+                  <Layers size={10} />
+                  <span>{activeView === 'DECK' ? 'IN OPERATIONS DECK' : 'OPERATIONS DECK'}</span>
+                </button>
+              )}
             </div>
             <div className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>DEFCON 2 · FLASH FLOOD CASCADE</span>
-              {currentUser && (
-                <span style={{ color: '#D6C6A5' }}>· {currentUser.organizationId || 'Chandigarh Emergency'}</span>
+              <span>DEFCON 2 · {activeMission?.name?.toUpperCase() || 'FLASH FLOOD CASCADE'}</span>
+              {currentOrg?.name && (
+                <span style={{ color: '#D6C6A5' }}>· {currentOrg.name}</span>
               )}
             </div>
           </div>
@@ -224,13 +251,21 @@ export default function MissionNavBar({
 
       </div>
 
-      {/* Mission Progress Rail: ●───●───●───◉───○───○ */}
+      {/* Mission Progress Rail or Operations Deck Status */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '4px' }}>
-        <AegisMissionRail
-          stages={stages}
-          currentStage={currentStage}
-          onSelectStage={onSelectStage}
-        />
+        {activeView === 'MISSION' ? (
+          <AegisMissionRail
+            stages={stages}
+            currentStage={currentStage}
+            onSelectStage={onSelectStage}
+          />
+        ) : (
+          <div style={{ padding: '4px 0', textAlign: 'center' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', letterSpacing: '0.12em' }}>
+              ● OPERATIONS DECK // SELECT AN ACTIVE INCIDENT THEATER TO ENGAGE 12-STAGE COMMAND CYCLE
+            </span>
+          </div>
+        )}
       </div>
 
     </header>
