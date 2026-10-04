@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, AlertTriangle, Cpu, ShieldAlert } from 'lucide-react';
 import { AegisCommandCard, AegisActionControl } from './aegis-controls';
 import { AegisAnimatedNumber } from './aegis-interactive';
+import { getZoneExplanation } from '../services/api';
 
 /**
  * ExplainableAIScreen
@@ -9,12 +10,37 @@ import { AegisAnimatedNumber } from './aegis-interactive';
  * Stage 6 conforming to Section 4 & 5:
  * - Entire interactive command card
  * - Tactile magnetic action control
- * - Dynamic risk delta attribution
+ * - Dynamic risk delta attribution from GET /api/zones/:id/explain
  */
 export default function ExplainableAIScreen({
-  onEnterCommandCenter
+  onEnterCommandCenter,
+  explanation: initialExplanation,
+  zoneId = 'D'
 }) {
-  const factorBars = [
+  const [explanation, setExplanation] = useState(initialExplanation);
+  const [isSyncing, setIsSyncing] = useState(!initialExplanation);
+
+  useEffect(() => {
+    if (initialExplanation) {
+      setExplanation(initialExplanation);
+      return;
+    }
+    let isMounted = true;
+    setIsSyncing(true);
+    getZoneExplanation(zoneId || 'D')
+      .then(data => {
+        if (isMounted && data) setExplanation(data);
+      })
+      .catch(err => {
+        console.warn('[AEGIS-API] Explanation fallback:', err.message);
+      })
+      .finally(() => {
+        if (isMounted) setIsSyncing(false);
+      });
+    return () => { isMounted = false; };
+  }, [initialExplanation, zoneId]);
+
+  const defaultFactors = [
     { name: "Heavy Rainfall Intensity", points: 31, color: "var(--color-sage)", desc: "42 mm/hr convective rainfall volume exceeds drainage culvert capacity." },
     { name: "Road 17 Culvert Washout", points: 24, color: "var(--color-critical)", desc: "Culvert washout completely obstructs primary ambulance arterial to Trauma Center." },
     { name: "Population Exposure Inundation", points: 19, color: "var(--color-beige)", desc: "2,900 dense urban residents directly exposed in flood inundation basin." },
@@ -22,6 +48,22 @@ export default function ExplainableAIScreen({
     { name: "Emergency Dispatch Surge", points: 8, color: "var(--color-sage-light)", desc: "Surge of 14 concurrent 911 trauma dispatch calls." },
     { name: "Fiber Telemetry Degradation", points: 8, color: "var(--color-unknown)", desc: "Direct fiber connection to trauma center degraded under flooding." }
   ];
+
+  // Dynamic factor points from API or fallback
+  const factorBars = defaultFactors.map((df, idx) => {
+    const apiItem = explanation?.factorBreakdown?.[idx] || explanation?.factors?.[idx];
+    if (apiItem) {
+      return {
+        ...df,
+        name: apiItem.name || apiItem.factor || df.name,
+        points: apiItem.points || apiItem.impact || df.points
+      };
+    }
+    return df;
+  });
+
+  const assessedRisk = explanation?.risk !== undefined ? explanation.risk : 96;
+  const dominantTrigger = explanation?.dominantTrigger || "Road 17 has suffered sudden culvert collapse due to +3.4m basin overflow. Direct trauma ambulance access to South General Hospital is 100% blocked.";
 
   return (
     <div style={{
@@ -35,8 +77,8 @@ export default function ExplainableAIScreen({
       width: '100%'
     }}>
       <AegisCommandCard
-        title="WHY IS ZONE D CRITICAL? — RISK DECOMPOSITION"
-        subtitle="XAI ATTRIBUTION · 6 CONTRIBUTING FACTORS"
+        title={`WHY IS ZONE ${zoneId} CRITICAL? — RISK DECOMPOSITION`}
+        subtitle={isSyncing ? "XAI ATTRIBUTION · SYNCING TELEMETRY..." : "XAI ATTRIBUTION · 6 CONTRIBUTING FACTORS"}
         badge="CRITICAL FLUX"
         badgeColor="var(--color-critical)"
         active={true}
@@ -70,7 +112,7 @@ export default function ExplainableAIScreen({
           <div style={{ textAlign: 'right' }}>
             <span className="font-mono" style={{ fontSize: '11px', color: '#fca5a5', letterSpacing: '0.08em' }}>CURRENT ASSESSED RISK</span>
             <div className="font-mono" style={{ fontSize: '32px', fontWeight: '800', color: 'var(--color-critical)' }}>
-              <AegisAnimatedNumber value={96} /> / 100
+              <AegisAnimatedNumber value={assessedRisk} /> / 100
             </div>
           </div>
         </div>
@@ -126,7 +168,7 @@ export default function ExplainableAIScreen({
             </span>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-off-white)', lineHeight: 1.5 }}>
-            Road 17 has suffered sudden culvert collapse due to +3.4m basin overflow. Direct trauma ambulance access to South General Hospital is 100% blocked.
+            {dominantTrigger}
           </p>
         </div>
 

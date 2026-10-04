@@ -114,8 +114,8 @@ export function getResources(missionId) {
   return request('/api/resources');
 }
 
-export function assignResource(resourceType, zoneId) {
-  return request(`/api/resources/${resourceType}/assign`, {
+export function assignResource(resourceId, zoneId) {
+  return request(`/api/resources/${resourceId}/assign`, {
     method: 'POST',
     body: JSON.stringify({ zoneId })
   });

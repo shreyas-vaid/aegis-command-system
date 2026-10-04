@@ -14,7 +14,15 @@ import DeploymentAnimationScreen from './components/DeploymentAnimationScreen';
 import OutcomeScreen from './components/OutcomeScreen';
 import { AegisSystemFeedback } from './components/aegis-controls';
 import { AegisCursor, AegisLivingCanvas, AegisCinematicTransition } from './components/aegis-interactive';
-import { getState, resetState, getHealth, getZones, getIncidents, getResources } from './services/api';
+import { 
+  getState, 
+  resetState, 
+  getHealth, 
+  getMissions, 
+  getZones, 
+  getIncidents, 
+  getResources 
+} from './services/api';
 import { WifiOff, Radio, Cpu, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -29,6 +37,8 @@ export default function App() {
   
   // Tactical State across mission
   const [activeStrategy, setActiveStrategy] = useState('ai');
+  const [activeExplanation, setActiveExplanation] = useState(null);
+  const [activeZoneId, setActiveZoneId] = useState('D');
   const [deployedPiece, setDeployedPiece] = useState({
     callsign: "AMBULANCE 02",
     type: "Advanced Life Support EMS",
@@ -47,18 +57,39 @@ export default function App() {
   const fetchWorldState = useCallback(async (isInitial = false) => {
     try {
       if (isInitial) {
-        setSyncState('MISSION SYNCING');
+        setSyncState('MISSION DATA SYNCING...');
       } else {
-        setSyncState('ZONE TELEMETRY SYNCING');
+        setSyncState('ZONE DATA SYNCING...');
       }
 
       // Check backend health & connectivity
-      await getHealth().catch(() => null);
+      const health = await getHealth().catch(() => null);
 
-      // Load primary mission state
-      const data = await getState();
-      setWorldState(data);
-      setIsOffline(false);
+      // Load primary mission state and REST resources
+      const [stateData, missionsData, zonesData, incidentsData, resourcesData] = await Promise.all([
+        getState().catch(() => null),
+        getMissions().catch(() => null),
+        getZones('027').catch(() => null),
+        getIncidents('027').catch(() => null),
+        getResources('027').catch(() => null)
+      ]);
+
+      if (health || stateData || zonesData) {
+        setWorldState({
+          ...stateData,
+          missions: missionsData || stateData?.missions || [],
+          zones: (zonesData && zonesData.length > 0) ? zonesData : (stateData?.zones || []),
+          incidents: (incidentsData && incidentsData.length > 0) ? incidentsData : (stateData?.incidents || []),
+          resources: (resourcesData && resourcesData.length > 0) ? resourcesData : (stateData?.resources || []),
+          cityHealth: stateData?.cityHealth ?? 70,
+          activeAlerts: stateData?.activeAlerts ?? 7,
+          hospitalLoad: stateData?.hospitalLoad ?? 72,
+          unknownZones: stateData?.unknownZones ?? 1
+        });
+        setIsOffline(false);
+      } else {
+        setIsOffline(true);
+      }
     } catch (err) {
       console.warn("[AEGIS-API] Backend unavailable — operating in graceful OFFLINE / DEMO MODE.", err.message);
       setIsOffline(true);
@@ -90,8 +121,8 @@ export default function App() {
 
   const handleReset = async () => {
     try {
-      setSyncState('MISSION SYNCING');
-      await resetState();
+      setSyncState('MISSION DATA SYNCING...');
+      await resetState().catch(() => null);
       setCurrentStage('briefing');
       await fetchWorldState();
       showToast("> SYSTEM RESET // BASELINE SCENARIO RESTORED", "info");
@@ -169,7 +200,7 @@ export default function App() {
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
             <WifiOff size={11} color="#f59e0b" />
             <span className="font-mono" style={{ fontSize: '10px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
-              OFFLINE / DEMO MODE
+              API OFFLINE · LOCAL SIMULATION ACTIVE
             </span>
           </div>
         ) : (
@@ -186,7 +217,7 @@ export default function App() {
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
             <Radio size={10} color="#6F947D" />
             <span className="font-mono" style={{ fontSize: '9px', color: '#a7f3d0', letterSpacing: '0.08em' }}>
-              AEGIS BACKEND LIVE
+              API CONNECTED
             </span>
           </div>
         )}
@@ -264,7 +295,9 @@ export default function App() {
         {currentStage === 'map' && (
           <DigitalTwinScreen
             zones={zones}
-            onExplainRisk={() => {
+            onExplainRisk={(exp, zid) => {
+              if (exp) setActiveExplanation(exp);
+              if (zid) setActiveZoneId(zid);
               handleStageSelect('explain');
               showToast("> TELEMETRY LINK ESTABLISHED // XAI FACTOR ATTRIBUTION LOADED", "info");
             }}
@@ -292,6 +325,8 @@ export default function App() {
         {/* STAGE 6: EXPLAINABLE AI (XAI) */}
         {currentStage === 'explain' && (
           <ExplainableAIScreen
+            explanation={activeExplanation}
+            zoneId={activeZoneId}
             onEnterCommandCenter={() => {
               handleStageSelect('command');
               showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
@@ -302,6 +337,9 @@ export default function App() {
         {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
         {currentStage === 'command' && (
           <CommandCenterScreen
+            onResourceAssigned={(unit, targetZone) => {
+              showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
+            }}
             onCreatePlan={() => {
               handleStageSelect('strategy');
               showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");

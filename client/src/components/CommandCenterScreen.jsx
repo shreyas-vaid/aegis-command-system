@@ -14,11 +14,30 @@ import {
 } from 'lucide-react';
 import { AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
+import { assignResource } from '../services/api';
 
 export default function CommandCenterScreen({
-  onCreatePlan
+  onCreatePlan,
+  onResourceAssigned
 }) {
   const [selectedUnit, setSelectedUnit] = useState(0);
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const handleUnitSelect = async (idx, res) => {
+    setSelectedUnit(idx);
+    setIsAssigning(true);
+    try {
+      const resourceId = res.name || res.callsign;
+      await assignResource(resourceId, 'D');
+      if (onResourceAssigned) {
+        onResourceAssigned(res, 'D');
+      }
+    } catch (err) {
+      console.warn('[AEGIS-API] Resource assignment fallback:', err.message);
+    } finally {
+      setTimeout(() => setIsAssigning(false), 350);
+    }
+  };
 
   const resources = [
     { callsign: "AMBULANCE 02", name: "AMBULANCE", count: 4, icon: HeartHandshake, color: "#6f947d", range: "14 KM", eta: "12 MIN", status: "AVAILABLE", desc: "Emergency medical triage & patient extraction" },
@@ -60,6 +79,13 @@ export default function CommandCenterScreen({
           <span className="font-hud" style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#d6c6a5', textTransform: 'uppercase' }}>
             COMMAND CENTER // RESOURCE LOGISTICS &amp; DEPLOYMENT
           </span>
+          {isAssigning && (
+            <div style={{ marginTop: '4px' }}>
+              <span className="font-mono" style={{ fontSize: '10px', color: '#38bdf8', letterSpacing: '0.1em', animation: 'pulse 1.5s infinite ease-in-out' }}>
+                ● RESOURCE DISPATCH SYNCING...
+              </span>
+            </div>
+          )}
           <h2 className="font-hud" style={{ fontSize: '30px', fontWeight: '800', color: '#eae5d8', margin: '4px 0 0 0', letterSpacing: '0.04em' }}>
             TACTICAL DEPLOYMENT MATRIX
           </h2>
@@ -115,7 +141,7 @@ export default function CommandCenterScreen({
               <div
                 key={idx}
                 data-cursor="deploy"
-                onClick={() => setSelectedUnit(idx)}
+                onClick={() => handleUnitSelect(idx, res)}
                 style={{ cursor: 'pointer' }}
               >
                 <Aegis3DCard
