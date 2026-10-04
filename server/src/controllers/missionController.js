@@ -24,7 +24,7 @@ const VALID_DISASTER_TYPES = [
 /**
  * Helper to resolve a mission by either ObjectId or missionId string
  */
-async function findMissionById(id) {
+export async function findMissionById(id) {
   if (mongoose.connection.readyState === 1) {
     if (mongoose.Types.ObjectId.isValid(id)) {
       const byMongoId = await Mission.findById(id);

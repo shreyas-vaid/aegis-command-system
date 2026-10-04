@@ -6,6 +6,7 @@ import {
   updateMission,
   deleteMission
 } from '../controllers/missionController.js';
+import { getMissionWeatherHandler } from '../controllers/weatherController.js';
 import { requireAuth, requireRole, optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -17,6 +18,9 @@ const router = express.Router();
 
 // GET /api/missions — List missions for authenticated user's organization
 router.get('/', requireAuth, getMissions);
+
+// GET /api/missions/:id/data/weather — Live meteorological intelligence strictly for operation coordinates
+router.get('/:id/data/weather', optionalAuth, getMissionWeatherHandler);
 
 // GET /api/missions/:id — Get details of a single operation (optionalAuth allows demo mission 027)
 router.get('/:id', optionalAuth, getMissionById);

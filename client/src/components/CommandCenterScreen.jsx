@@ -15,6 +15,7 @@ import {
 import { AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
 import { assignResource } from '../services/api';
+import AegisWeatherWidget from './AegisWeatherWidget';
 
 export default function CommandCenterScreen({
   onCreatePlan,
@@ -163,6 +164,12 @@ export default function CommandCenterScreen({
             "Prevent South General Hospital from losing emergency access &amp; probe Zone E silence."
           </p>
         </div>
+
+        {/* Live Weather Intelligence Module */}
+        <AegisWeatherWidget
+          missionId={activeMission?.missionId || '027'}
+          locationName={activeMission?.locationName || 'CHANDIGARH'}
+        />
 
         {/* 6 Interactive Resource Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>

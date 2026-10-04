@@ -172,6 +172,12 @@ export function searchLocations(query) {
   return request(`/api/locations/search?q=${encodeURIComponent(query.trim())}`);
 }
 
+// ─── WEATHER INTELLIGENCE ─────────────────────────────────────────────
+export function getMissionWeather(missionId, forceRefresh = false) {
+  const query = forceRefresh ? '?refresh=true' : '';
+  return request(`/api/missions/${missionId}/data/weather${query}`);
+}
+
 // ─── STATE (Legacy) ──────────────────────────────────────────────────
 export function getState() {
   return request('/api/state');

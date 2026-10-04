@@ -23,6 +23,7 @@ import {
 } from './aegis-controls';
 import { AegisAnimatedNumber, Aegis3DCard } from './aegis-interactive';
 import { getZone, getZoneExplanation } from '../services/api';
+import AegisWeatherWidget from './AegisWeatherWidget';
 
 export default function DigitalTwinScreen({
   zones = [],
@@ -296,6 +297,15 @@ export default function DigitalTwinScreen({
               <p style={{ margin: '4px 0 0 0', fontWeight: '700', color: zoneData.risk >= 80 ? '#d9534f' : '#eae5d8' }}>
                 {zoneData.hospitalAccess}
               </p>
+            </div>
+
+            {/* Live Atmospheric Intelligence in Sector Dossier */}
+            <div style={{ marginTop: '8px', marginBottom: '4px' }}>
+              <AegisWeatherWidget
+                missionId={activeMission?.missionId || '027'}
+                locationName={activeMission?.locationName || 'THEATER'}
+                compact={true}
+              />
             </div>
 
             {/* Command Modules in Drawer (EXPLAIN RISK & INVESTIGATE) */}
