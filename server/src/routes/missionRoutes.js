@@ -7,6 +7,12 @@ import {
   deleteMission
 } from '../controllers/missionController.js';
 import { getMissionWeatherHandler } from '../controllers/weatherController.js';
+import {
+  getMissionReports,
+  createMissionReport,
+  getMissionReportById,
+  updateMissionReport
+} from '../controllers/reportController.js';
 import { requireAuth, requireRole, optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -21,6 +27,19 @@ router.get('/', requireAuth, getMissions);
 
 // GET /api/missions/:id/data/weather — Live meteorological intelligence strictly for operation coordinates
 router.get('/:id/data/weather', optionalAuth, getMissionWeatherHandler);
+
+// ─── FIELD REPORTS / HUMAN OBSERVATIONS ──────────────────────────────
+// GET /api/missions/:id/reports — Retrieve operational field reports
+router.get('/:id/reports', optionalAuth, getMissionReports);
+
+// POST /api/missions/:id/reports — Submit a new field observation
+router.post('/:id/reports', requireAuth, createMissionReport);
+
+// GET /api/missions/:id/reports/:reportId — Retrieve single field report detail
+router.get('/:id/reports/:reportId', optionalAuth, getMissionReportById);
+
+// PATCH /api/missions/:id/reports/:reportId — Review / resolve / update field report
+router.patch('/:id/reports/:reportId', requireAuth, updateMissionReport);
 
 // GET /api/missions/:id — Get details of a single operation (optionalAuth allows demo mission 027)
 router.get('/:id', optionalAuth, getMissionById);

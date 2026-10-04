@@ -16,6 +16,7 @@ import { AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
 import { assignResource } from '../services/api';
 import AegisWeatherWidget from './AegisWeatherWidget';
+import AegisFieldReports from './AegisFieldReports';
 
 export default function CommandCenterScreen({
   onCreatePlan,
@@ -165,11 +166,18 @@ export default function CommandCenterScreen({
           </p>
         </div>
 
-        {/* Live Weather Intelligence Module */}
-        <AegisWeatherWidget
-          missionId={activeMission?.missionId || '027'}
-          locationName={activeMission?.locationName || 'CHANDIGARH'}
-        />
+        {/* Live Weather Intelligence & Human Field Observations Dual Feed */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px', alignItems: 'start' }}>
+          <AegisWeatherWidget
+            missionId={activeMission?.missionId || '027'}
+            locationName={activeMission?.locationName || 'CHANDIGARH'}
+          />
+          <AegisFieldReports
+            missionId={activeMission?.missionId || '027'}
+            activeMission={activeMission}
+            currentUser={currentUser}
+          />
+        </div>
 
         {/* 6 Interactive Resource Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>

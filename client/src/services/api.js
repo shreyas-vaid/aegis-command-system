@@ -178,6 +178,29 @@ export function getMissionWeather(missionId, forceRefresh = false) {
   return request(`/api/missions/${missionId}/data/weather${query}`);
 }
 
+// ─── FIELD REPORTS INTELLIGENCE ──────────────────────────────────────
+export function getMissionReports(missionId) {
+  return request(`/api/missions/${missionId}/reports`);
+}
+
+export function createMissionReport(missionId, data) {
+  return request(`/api/missions/${missionId}/reports`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function getMissionReport(missionId, reportId) {
+  return request(`/api/missions/${missionId}/reports/${reportId}`);
+}
+
+export function updateMissionReport(missionId, reportId, data) {
+  return request(`/api/missions/${missionId}/reports/${reportId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
 // ─── STATE (Legacy) ──────────────────────────────────────────────────
 export function getState() {
   return request('/api/state');
