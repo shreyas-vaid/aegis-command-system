@@ -20,7 +20,8 @@ export default function CommandCenterScreen({
   onCreatePlan,
   onResourceAssigned,
   currentOrg = null,
-  currentUser = null
+  currentUser = null,
+  activeMission = null
 }) {
   const [selectedUnit, setSelectedUnit] = useState(0);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -109,15 +110,15 @@ export default function CommandCenterScreen({
               JURISDICTION / ORGANIZATION
             </span>
             <span className="font-hud" style={{ fontSize: '13px', fontWeight: '700', color: '#EAE5D8' }}>
-              {currentOrg?.name || 'Chandigarh Emergency Response Corps'}
+              {currentOrg?.name || (activeMission?.locationName ? `${activeMission.locationName} Emergency Command` : 'Regional Emergency Operations Command')}
             </span>
           </div>
           <div style={{ textAlign: 'right' }}>
             <span className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em', display: 'block' }}>
-              ACTIVE OPERATIONS
+              ACTIVE THEATER OPERATION
             </span>
             <span className="font-mono" style={{ fontSize: '11px', color: '#4ADE80', fontWeight: '700' }}>
-              ● 1 ACTIVE // FLASH FLOOD CASCADE (#027)
+              ● {(activeMission?.name || 'FLASH FLOOD CASCADE').toUpperCase()} (#{activeMission?.missionId || '027'})
             </span>
           </div>
         </div>

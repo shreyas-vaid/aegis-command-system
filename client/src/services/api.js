@@ -164,6 +164,14 @@ export function archiveMission(id) {
   });
 }
 
+// ─── LOCATION INTELLIGENCE ───────────────────────────────────────────
+export function searchLocations(query) {
+  if (!query || typeof query !== 'string' || query.trim().length < 3) {
+    return Promise.resolve([]);
+  }
+  return request(`/api/locations/search?q=${encodeURIComponent(query.trim())}`);
+}
+
 // ─── STATE (Legacy) ──────────────────────────────────────────────────
 export function getState() {
   return request('/api/state');

@@ -26,6 +26,7 @@ import Organization from './models/Organization.js';
 import authRoutes from './routes/authRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import missionRoutes from './routes/missionRoutes.js';
+import locationRoutes from './routes/locationRoutes.js';
 import { requireAuth } from './middleware/auth.js';
 import { getMe } from './controllers/authController.js';
 
@@ -82,6 +83,9 @@ app.get('/api/health', (req, res) => {
 
 // ─── 2. MISSIONS / OPERATIONS API ────────────────────────────────────
 app.use('/api/missions', missionRoutes);
+
+// ─── LOCATION INTELLIGENCE API ──────────────────────────────────────
+app.use('/api/locations', locationRoutes);
 
 // ─── 3. MISSION-SCOPED NESTED ENDPOINTS ──────────────────────────────
 // GET /api/missions/:id/zones — Return sectors for this mission

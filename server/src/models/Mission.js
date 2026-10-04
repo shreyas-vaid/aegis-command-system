@@ -41,18 +41,34 @@ const missionSchema = new mongoose.Schema({
   locationName: {
     type: String,
     required: true,
+    trim: true
+  },
+  locationCountry: {
+    type: String,
     trim: true,
-    default: 'Chandigarh'
+    default: ''
+  },
+  locationRegion: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  locationDisplayName: {
+    type: String,
+    trim: true,
+    default: ''
   },
   latitude: {
     type: Number,
     required: true,
-    default: 30.7333
+    min: -90,
+    max: 90
   },
   longitude: {
     type: Number,
     required: true,
-    default: 76.7794
+    min: -180,
+    max: 180
   },
   severity: {
     type: String,

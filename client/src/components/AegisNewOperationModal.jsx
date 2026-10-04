@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   MapPin, 
@@ -9,9 +9,15 @@ import {
   AlertCircle, 
   Compass, 
   Layers,
-  Activity
+  Activity,
+  Search,
+  CheckCircle2,
+  RotateCcw,
+  Crosshair,
+  Cpu,
+  Globe
 } from 'lucide-react';
-import { createMission } from '../services/api';
+import { createMission, searchLocations } from '../services/api';
 
 const DISASTER_TYPES = [
   { value: 'FLOOD', label: 'Flood / Flash Flooding', icon: Waves },
@@ -33,18 +39,75 @@ export default function AegisNewOperationModal({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [disasterType, setDisasterType] = useState('FLOOD');
-  const [locationName, setLocationName] = useState('Chandigarh');
-  const [latitude, setLatitude] = useState('30.7333');
-  const [longitude, setLongitude] = useState('76.7794');
   const [status, setStatus] = useState('PLANNING');
   const [severity, setSeverity] = useState('HIGH');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Location Search & Selection State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
+  // Debounced Location Search Effect
+  useEffect(() => {
+    if (selectedLocation) return;
+
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 3) {
+      setSearchResults([]);
+      setSearchError(null);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setSearchError(null);
+      try {
+        const results = await searchLocations(trimmed);
+        if (Array.isArray(results) && results.length > 0) {
+          setSearchResults(results);
+          setSearchError(null);
+        } else {
+          setSearchResults([]);
+          setSearchError('NO LOCATIONS FOUND · Try another query or city name');
+        }
+      } catch (err) {
+        setSearchResults([]);
+        setSearchError('LOCATION SERVICE UNAVAILABLE · Check network connection');
+      } finally {
+        setIsSearching(false);
+      }
+    }, 380);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedLocation]);
+
   if (!isOpen) return null;
+
+  const handleSelectLocation = (loc) => {
+    setSelectedLocation(loc);
+    setSearchResults([]);
+    setSearchError(null);
+  };
+
+  const handleClearLocation = () => {
+    setSelectedLocation(null);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedLocation) {
+      setError('Please search and select a confirmed theater location');
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
@@ -53,9 +116,12 @@ export default function AegisNewOperationModal({
         name: name.trim(),
         description: description.trim(),
         disasterType,
-        locationName: locationName.trim(),
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        locationName: selectedLocation.locationName,
+        locationDisplayName: selectedLocation.displayName,
+        locationCountry: selectedLocation.country,
+        locationRegion: selectedLocation.region,
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
         status,
         severity
       };
@@ -88,7 +154,10 @@ export default function AegisNewOperationModal({
         className="aegis-card-glass"
         style={{
           width: '100%',
-          maxWidth: '540px',
+          maxWidth: '580px',
+          maxHeight: '92vh',
+          display: 'flex',
+          flexDirection: 'column',
           background: 'linear-gradient(175deg, rgba(14, 27, 21, 0.98) 0%, rgba(8, 13, 10, 0.98) 100%)',
           border: '1px solid rgba(214, 198, 165, 0.3)',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(214, 198, 165, 0.2)',
@@ -99,36 +168,36 @@ export default function AegisNewOperationModal({
       >
         {/* Header */}
         <div style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(214, 198, 165, 0.15)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(214, 198, 165, 0.16)',
-          background: 'rgba(111, 148, 125, 0.1)'
+          background: 'rgba(10, 20, 15, 0.6)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '30px',
-              height: '30px',
+              width: '28px',
+              height: '28px',
               borderRadius: '4px',
-              background: 'rgba(111, 148, 125, 0.2)',
-              border: '1px solid rgba(214, 198, 165, 0.4)',
+              background: 'rgba(111, 148, 125, 0.15)',
+              border: '1px solid rgba(111, 148, 125, 0.4)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: '#D6C6A5'
+              justifyContent: 'center'
             }}>
-              <ShieldAlert size={17} />
+              <Globe size={15} color="#6F947D" />
             </div>
             <div>
-              <div className="font-hud" style={{ fontSize: '14px', letterSpacing: '0.12em', color: '#EAE5D8', fontWeight: '800' }}>
-                COMMISSION NEW OPERATION
+              <div className="font-hud" style={{ fontSize: '13px', color: '#EAE5D8', letterSpacing: '0.1em' }}>
+                AEGIS 2.0 // COMMISSION NEW OPERATION
               </div>
-              <div className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4' }}>
-                ORGANIZATION: {currentOrg?.name || 'Chandigarh Emergency Response'}
+              <div className="font-mono" style={{ fontSize: '9px', color: '#6F947D' }}>
+                ORGANIZATION: {currentOrg?.name || 'REGIONAL COMMAND AUTHORITY'}
               </div>
             </div>
           </div>
+
           <button
             onClick={onClose}
             style={{
@@ -137,15 +206,16 @@ export default function AegisNewOperationModal({
               color: '#9FB5A4',
               cursor: 'pointer',
               padding: '4px',
-              display: 'flex'
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '22px 24px', maxHeight: '80vh', overflowY: 'auto' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '20px', overflowY: 'auto' }}>
           
           {error && (
             <div style={{
@@ -154,14 +224,14 @@ export default function AegisNewOperationModal({
               gap: '8px',
               padding: '10px 12px',
               marginBottom: '16px',
+              background: 'rgba(217, 83, 79, 0.15)',
+              border: '1px solid rgba(217, 83, 79, 0.4)',
               borderRadius: '4px',
-              background: 'rgba(217, 83, 79, 0.18)',
-              border: '1px solid rgba(217, 83, 79, 0.5)',
-              color: '#FCA5A5',
+              color: '#F87171',
               fontSize: '11px',
               fontFamily: 'monospace'
             }}>
-              <AlertCircle size={15} style={{ flexShrink: 0 }} />
+              <AlertCircle size={14} />
               <span>{error}</span>
             </div>
           )}
@@ -169,14 +239,14 @@ export default function AegisNewOperationModal({
           {/* Operation Name */}
           <div style={{ marginBottom: '14px' }}>
             <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-              OPERATION CODENAME / TITLE *
+              OPERATION CODENAME *
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Flash Flood Cascade or Industrial Sector Breach"
+              placeholder="e.g. Flash Flood Response / Sector Vigilance"
               style={{
                 width: '100%',
                 padding: '9px 12px',
@@ -184,23 +254,23 @@ export default function AegisNewOperationModal({
                 border: '1px solid rgba(214, 198, 165, 0.25)',
                 borderRadius: '4px',
                 color: '#EAE5D8',
-                fontSize: '13px',
+                fontSize: '12px',
                 outline: 'none',
                 boxSizing: 'border-box'
               }}
             />
           </div>
 
-          {/* Description */}
+          {/* Operation Description */}
           <div style={{ marginBottom: '14px' }}>
             <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-              TACTICAL DESCRIPTION & OBJECTIVE
+              OPERATIONAL SITREP / CONTEXT
             </label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Rising water levels affecting low-lying urban sectors and key hospital corridor..."
+              placeholder="Briefing summary of the threat vector and tactical objectives..."
               style={{
                 width: '100%',
                 padding: '8px 12px',
@@ -208,19 +278,19 @@ export default function AegisNewOperationModal({
                 border: '1px solid rgba(214, 198, 165, 0.25)',
                 borderRadius: '4px',
                 color: '#EAE5D8',
-                fontSize: '12px',
+                fontSize: '11px',
                 outline: 'none',
-                boxSizing: 'border-box',
-                resize: 'none'
+                resize: 'none',
+                boxSizing: 'border-box'
               }}
             />
           </div>
 
-          {/* Disaster Type & Status */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+          {/* Disaster Type & Severity */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-                DISASTER TYPE *
+                DISASTER VECTOR *
               </label>
               <select
                 value={disasterType}
@@ -239,126 +309,297 @@ export default function AegisNewOperationModal({
                 }}
               >
                 {DISASTER_TYPES.map(t => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
               <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-                INITIAL OPERATIONAL STATUS
+                ALERT SEVERITY
               </label>
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                value={severity}
+                onChange={(e) => setSeverity(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '9px 10px',
                   background: 'rgba(8, 13, 10, 0.85)',
                   border: '1px solid rgba(214, 198, 165, 0.25)',
                   borderRadius: '4px',
-                  color: '#D6C6A5',
+                  color: severity === 'CRITICAL' ? '#EF4444' : severity === 'HIGH' ? '#F59E0B' : '#6F947D',
                   fontSize: '11px',
                   fontFamily: 'monospace',
                   outline: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  fontWeight: '700'
                 }}
               >
-                <option value="PLANNING">● PLANNING (STAGING)</option>
-                <option value="ACTIVE">● ACTIVE (DEPLOYED)</option>
-                <option value="PAUSED">Ⅱ PAUSED</option>
-                <option value="COMPLETED">✓ COMPLETED</option>
+                <option value="CRITICAL">🔴 CRITICAL</option>
+                <option value="HIGH">🟠 HIGH</option>
+                <option value="MODERATE">🟡 MODERATE</option>
+                <option value="LOW">🟢 LOW</option>
               </select>
             </div>
           </div>
 
-          {/* Location & Coordinates */}
-          <div style={{ marginBottom: '14px' }}>
+          {/* Initial Operational Status */}
+          <div style={{ marginBottom: '16px' }}>
             <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-              PRIMARY THEATER LOCATION *
+              COMMISSIONING STATUS
             </label>
-            <div style={{ position: 'relative' }}>
-              <MapPin size={14} color="#6F947D" style={{ position: 'absolute', left: '10px', top: '11px' }} />
-              <input
-                type="text"
-                required
-                value={locationName}
-                onChange={(e) => setLocationName(e.target.value)}
-                placeholder="Chandigarh, Punjab/Haryana Region"
-                style={{
-                  width: '100%',
-                  padding: '9px 12px 9px 32px',
-                  background: 'rgba(8, 13, 10, 0.8)',
-                  border: '1px solid rgba(214, 198, 165, 0.25)',
-                  borderRadius: '4px',
-                  color: '#EAE5D8',
-                  fontSize: '12px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '9px 10px',
+                background: 'rgba(8, 13, 10, 0.85)',
+                border: '1px solid rgba(214, 198, 165, 0.25)',
+                borderRadius: '4px',
+                color: '#D6C6A5',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="PLANNING">● PLANNING (STAGE PREPARATION)</option>
+              <option value="ACTIVE">● ACTIVE (THEATER LIVE)</option>
+              <option value="PAUSED">Ⅱ PAUSED</option>
+              <option value="COMPLETED">✓ COMPLETED</option>
+            </select>
           </div>
 
-          {/* Latitude & Longitude Coordinates */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px' }}>
-            <div>
-              <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-                LATITUDE (DECIMAL) *
-              </label>
-              <input
-                type="number"
-                step="0.0001"
-                required
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value)}
-                placeholder="30.7333"
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  background: 'rgba(8, 13, 10, 0.8)',
-                  border: '1px solid rgba(214, 198, 165, 0.25)',
-                  borderRadius: '4px',
-                  color: '#EAE5D8',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
+          {/* ─── REAL LOCATION INTELLIGENCE & SELECTION ─── */}
+          <div style={{
+            background: 'rgba(9, 16, 12, 0.8)',
+            border: '1px solid rgba(111, 148, 125, 0.25)',
+            borderRadius: '6px',
+            padding: '14px',
+            marginBottom: '18px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Crosshair size={13} color="#6F947D" />
+                <span className="font-hud" style={{ fontSize: '11px', color: '#D6C6A5', letterSpacing: '0.08em' }}>
+                  LOCATION INTELLIGENCE // THEATER GEOGRAPHY *
+                </span>
+              </div>
+              {isSearching && (
+                <span className="font-mono" style={{ fontSize: '9px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Cpu size={10} className="pulse" />
+                  SYNCING...
+                </span>
+              )}
             </div>
 
-            <div>
-              <label className="font-mono" style={{ display: 'block', fontSize: '10px', color: '#9FB5A4', marginBottom: '5px', letterSpacing: '0.06em' }}>
-                LONGITUDE (DECIMAL) *
-              </label>
-              <input
-                type="number"
-                step="0.0001"
-                required
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value)}
-                placeholder="76.7794"
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  background: 'rgba(8, 13, 10, 0.8)',
-                  border: '1px solid rgba(214, 198, 165, 0.25)',
-                  borderRadius: '4px',
-                  color: '#EAE5D8',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+            {/* State A: Location Selected & Confirmed */}
+            {selectedLocation ? (
+              <div style={{
+                background: 'rgba(14, 27, 21, 0.95)',
+                border: '1px solid rgba(16, 185, 129, 0.45)',
+                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.1)',
+                borderRadius: '5px',
+                padding: '12px 14px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                      <CheckCircle2 size={14} color="#10B981" />
+                      <span className="font-hud" style={{ fontSize: '12px', color: '#EAE5D8', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        {selectedLocation.locationName}
+                      </span>
+                      <span style={{
+                        fontSize: '9px',
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        color: '#6EE7B7',
+                        fontFamily: 'monospace'
+                      }}>
+                        CONFIRMED
+                      </span>
+                    </div>
+
+                    <div className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', marginBottom: '8px', lineHeight: 1.3 }}>
+                      {selectedLocation.displayName}
+                    </div>
+
+                    {/* Coordinates Radar Badge */}
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '4px 10px',
+                      borderRadius: '3px',
+                      background: 'rgba(8, 13, 10, 0.8)',
+                      border: '1px solid rgba(214, 198, 165, 0.2)'
+                    }}>
+                      <Compass size={11} color="#D6C6A5" />
+                      <span className="font-mono" style={{ fontSize: '10px', color: '#D6C6A5', fontWeight: '700' }}>
+                        {selectedLocation.latitude.toFixed(4)}° {selectedLocation.latitude >= 0 ? 'N' : 'S'}
+                        {' · '}
+                        {selectedLocation.longitude.toFixed(4)}° {selectedLocation.longitude >= 0 ? 'E' : 'W'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleClearLocation}
+                    className="font-mono"
+                    style={{
+                      background: 'rgba(214, 198, 165, 0.1)',
+                      border: '1px solid rgba(214, 198, 165, 0.25)',
+                      color: '#D6C6A5',
+                      padding: '4px 8px',
+                      borderRadius: '3px',
+                      fontSize: '9px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <RotateCcw size={10} />
+                    <span>CHANGE</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* State B: Search & Select Candidates */
+              <div>
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <Search size={13} color="#6F947D" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search target city, sector, or coordinate base (min 3 chars)..."
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px 8px 30px',
+                      background: 'rgba(8, 13, 10, 0.9)',
+                      border: '1px solid rgba(214, 198, 165, 0.25)',
+                      borderRadius: '4px',
+                      color: '#EAE5D8',
+                      fontSize: '11px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Candidate Results Deck */}
+                {searchResults.length > 0 && (
+                  <div style={{
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    border: '1px solid rgba(111, 148, 125, 0.3)',
+                    borderRadius: '4px',
+                    background: 'rgba(8, 13, 10, 0.95)',
+                    marginTop: '6px'
+                  }}>
+                    <div style={{ padding: '4px 8px', background: 'rgba(111, 148, 125, 0.15)', borderBottom: '1px solid rgba(111, 148, 125, 0.2)' }}>
+                      <span className="font-hud" style={{ fontSize: '9px', color: '#9FB5A4', letterSpacing: '0.08em' }}>
+                        LOCATION CANDIDATES ({searchResults.length})
+                      </span>
+                    </div>
+
+                    {searchResults.map((loc, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => handleSelectLocation(loc)}
+                        style={{
+                          padding: '8px 10px',
+                          borderBottom: idx === searchResults.length - 1 ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          transition: 'background 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(111, 148, 125, 0.18)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <div style={{ overflow: 'hidden' }}>
+                          <div className="font-hud" style={{ fontSize: '11px', color: '#EAE5D8', textTransform: 'uppercase' }}>
+                            {loc.locationName}
+                          </div>
+                          <div className="font-mono" style={{ fontSize: '9px', color: '#9FB5A4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {loc.displayName}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                          <span className="font-mono" style={{ fontSize: '9px', color: '#D6C6A5', background: 'rgba(214, 198, 165, 0.1)', padding: '2px 5px', borderRadius: '2px' }}>
+                            {loc.latitude.toFixed(2)}°, {loc.longitude.toFixed(2)}°
+                          </span>
+                          <span className="font-hud" style={{ fontSize: '9px', color: '#10B981', fontWeight: '700' }}>
+                            SELECT →
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty / Error state */}
+                {searchError && (
+                  <div style={{
+                    padding: '8px 10px',
+                    marginTop: '4px',
+                    borderRadius: '3px',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    color: '#FCD34D',
+                    fontSize: '10px',
+                    fontFamily: 'monospace'
+                  }}>
+                    {searchError}
+                  </div>
+                )}
+
+                {/* Quick Presets / Hint */}
+                {!searchError && searchResults.length === 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <span className="font-mono" style={{ fontSize: '9px', color: '#6F947D' }}>
+                      REGIONAL PRESETS:
+                    </span>
+                    {['Chandigarh', 'New Delhi', 'Mumbai', 'London', 'Tokyo'].map((city) => (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => setSearchQuery(city)}
+                        style={{
+                          background: 'rgba(111, 148, 125, 0.1)',
+                          border: '1px solid rgba(111, 148, 125, 0.2)',
+                          color: '#A7F3D0',
+                          fontSize: '9px',
+                          padding: '1px 6px',
+                          borderRadius: '2px',
+                          cursor: 'pointer',
+                          fontFamily: 'monospace'
+                        }}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Action */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !selectedLocation}
             className="btn-command-primary"
             style={{
               width: '100%',
@@ -368,11 +609,13 @@ export default function AegisNewOperationModal({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px'
+              gap: '8px',
+              opacity: (!selectedLocation || loading) ? 0.6 : 1,
+              cursor: (!selectedLocation || loading) ? 'not-allowed' : 'pointer'
             }}
           >
             {loading ? (
-              <span>INITIALIZING OPERATION IN DATABASE...</span>
+              <span>PROVISIONING OPERATION IN DATABASE...</span>
             ) : (
               <>
                 <span>COMMISSION & ENTER THEATER</span>
@@ -381,9 +624,9 @@ export default function AegisNewOperationModal({
             )}
           </button>
 
-          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+          <div style={{ textAlign: 'center', marginTop: '10px' }}>
             <span className="font-mono" style={{ fontSize: '9px', color: '#6F947D' }}>
-              STRICTLY BOUND TO {currentOrg?.name || 'ORGANIZATION'} · ENFORCED DATA ISOLATION
+              STRICTLY BOUND TO {currentOrg?.name?.toUpperCase() || 'ORGANIZATION'} · ENFORCED DATA ISOLATION
             </span>
           </div>
 

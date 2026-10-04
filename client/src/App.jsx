@@ -415,89 +415,92 @@ export default function App() {
           {/* STAGE 1: MISSION BRIEFING */}
           {currentStage === 'briefing' && (
             <MissionBriefingScreen
-            cityHealth={worldState?.cityHealth || 70}
-            activeAlerts={worldState?.activeAlerts || 7}
-            unknownZones={worldState?.unknownZones || 1}
-            onBeginOperation={() => {
-              handleStageSelect('investigate');
-              showToast("> OPERATION #027 INITIATED // LIVE SENSOR ARRAYS ONLINE", "info");
-            }}
-          />
-        )}
+              cityHealth={worldState?.cityHealth || 70}
+              activeAlerts={worldState?.activeAlerts || 7}
+              unknownZones={worldState?.unknownZones || 1}
+              activeMission={activeMission}
+              onBeginOperation={() => {
+                handleStageSelect('investigate');
+                showToast(`> OPERATION #${activeMission?.missionId || '027'} INITIATED // LIVE SENSOR ARRAYS ONLINE`, "info");
+              }}
+            />
+          )}
 
-        {/* STAGE 2: INCIDENT INVESTIGATION */}
-        {currentStage === 'investigate' && (
-          <IncidentInvestigationScreen
-            onFuseIncident={() => {
-              handleStageSelect('fuse');
-              showToast("> MULTI-SIGNAL SYNTHESIS // 5 SOURCES CORRELATED", "success");
-            }}
-          />
-        )}
+          {/* STAGE 2: INCIDENT INVESTIGATION */}
+          {currentStage === 'investigate' && (
+            <IncidentInvestigationScreen
+              onFuseIncident={() => {
+                handleStageSelect('fuse');
+                showToast("> MULTI-SIGNAL SYNTHESIS // 5 SOURCES CORRELATED", "success");
+              }}
+            />
+          )}
 
-        {/* STAGE 3: INCIDENT FUSION */}
-        {currentStage === 'fuse' && (
-          <IncidentFusionScreen
-            onRevealDigitalTwin={() => {
-              handleStageSelect('map');
-              showToast("> DIGITAL TWIN MATRIX ONLINE // 5 SECTORS SYNCHRONIZED", "success");
-            }}
-          />
-        )}
+          {/* STAGE 3: INCIDENT FUSION */}
+          {currentStage === 'fuse' && (
+            <IncidentFusionScreen
+              onRevealDigitalTwin={() => {
+                handleStageSelect('map');
+                showToast("> DIGITAL TWIN MATRIX ONLINE // 5 SECTORS SYNCHRONIZED", "success");
+              }}
+            />
+          )}
 
-        {/* STAGE 4: DIGITAL TWIN HERO MAP */}
-        {currentStage === 'map' && (
-          <DigitalTwinScreen
-            zones={zones}
-            onExplainRisk={(exp, zid) => {
-              if (exp) setActiveExplanation(exp);
-              if (zid) setActiveZoneId(zid);
-              handleStageSelect('explain');
-              showToast("> TELEMETRY LINK ESTABLISHED // XAI FACTOR ATTRIBUTION LOADED", "info");
-            }}
-            onInvestigateUnknown={() => {
-              handleStageSelect('unknown');
-              showToast("> RECONNAISSANCE PROTOCOL ENGAGED // PROBING ZONE E BLACKOUT", "warning");
-            }}
-          />
-        )}
+          {/* STAGE 4: DIGITAL TWIN HERO MAP */}
+          {currentStage === 'map' && (
+            <DigitalTwinScreen
+              zones={zones}
+              activeMission={activeMission}
+              onExplainRisk={(exp, zid) => {
+                if (exp) setActiveExplanation(exp);
+                if (zid) setActiveZoneId(zid);
+                handleStageSelect('explain');
+                showToast("> TELEMETRY LINK ESTABLISHED // XAI FACTOR ATTRIBUTION LOADED", "info");
+              }}
+              onInvestigateUnknown={() => {
+                handleStageSelect('unknown');
+                showToast("> RECONNAISSANCE PROTOCOL ENGAGED // PROBING ZONE E BLACKOUT", "warning");
+              }}
+            />
+          )}
 
-        {/* STAGE 5: UNKNOWN ZONE INTELLIGENCE */}
-        {currentStage === 'unknown' && (
-          <UnknownZoneScreen
-            onProceedToExplain={() => {
-              handleStageSelect('explain');
-              showToast("> ZONE E BLACKOUT UNMASKED // ATTRIBUTION BREAKDOWN READY", "info");
-            }}
-            onZoneUpdated={(updatedZone) => {
-              showToast(`> SECTOR ${updatedZone.id} STATUS UPDATED // ${updatedZone.status}`, "warning");
-              fetchWorldState();
-            }}
-          />
-        )}
+          {/* STAGE 5: UNKNOWN ZONE INTELLIGENCE */}
+          {currentStage === 'unknown' && (
+            <UnknownZoneScreen
+              onProceedToExplain={() => {
+                handleStageSelect('explain');
+                showToast("> ZONE E BLACKOUT UNMASKED // ATTRIBUTION BREAKDOWN READY", "info");
+              }}
+              onZoneUpdated={(updatedZone) => {
+                showToast(`> SECTOR ${updatedZone.id} STATUS UPDATED // ${updatedZone.status}`, "warning");
+                fetchWorldState();
+              }}
+            />
+          )}
 
-        {/* STAGE 6: EXPLAINABLE AI (XAI) */}
-        {currentStage === 'explain' && (
-          <ExplainableAIScreen
-            explanation={activeExplanation}
-            zoneId={activeZoneId}
-            onEnterCommandCenter={() => {
-              handleStageSelect('command');
-              showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
-            }}
-          />
-        )}
+          {/* STAGE 6: EXPLAINABLE AI (XAI) */}
+          {currentStage === 'explain' && (
+            <ExplainableAIScreen
+              explanation={activeExplanation}
+              zoneId={activeZoneId}
+              onEnterCommandCenter={() => {
+                handleStageSelect('command');
+                showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
+              }}
+            />
+          )}
 
-        {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
-        {currentStage === 'command' && (
-          <CommandCenterScreen
-            currentUser={currentUser}
-            currentOrg={currentOrg}
-            onResourceAssigned={(unit, targetZone) => {
-              showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
-            }}
-            onCreatePlan={() => {
-              handleStageSelect('strategy');
+          {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
+          {currentStage === 'command' && (
+            <CommandCenterScreen
+              currentUser={currentUser}
+              currentOrg={currentOrg}
+              activeMission={activeMission}
+              onResourceAssigned={(unit, targetZone) => {
+                showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
+              }}
+              onCreatePlan={() => {
+                handleStageSelect('strategy');
               showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");
             }}
           />

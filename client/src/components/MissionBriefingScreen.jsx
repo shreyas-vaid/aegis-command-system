@@ -7,7 +7,8 @@ export default function MissionBriefingScreen({
   cityHealth = 70,
   activeAlerts = 7,
   unknownZones = 1,
-  onBeginOperation
+  onBeginOperation,
+  activeMission = null
 }) {
   return (
     <div style={{
@@ -50,37 +51,50 @@ export default function MissionBriefingScreen({
           AI Emergency Intelligence &amp; Simulation System
         </p>
 
+        {/* Operational Codename */}
+        <div style={{ marginTop: '12px', marginBottom: '4px' }}>
+          <span className="font-hud" style={{ fontSize: '18px', color: '#D6C6A5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {activeMission?.name || 'Flash Flood Cascade'}
+          </span>
+        </div>
+
         {/* Divider */}
-        <div style={{ width: '100%', height: '1px', background: 'rgba(214, 198, 165, 0.12)', margin: '24px 0' }} />
+        <div style={{ width: '100%', height: '1px', background: 'rgba(214, 198, 165, 0.12)', margin: '18px 0' }} />
 
         {/* Operation Dossier Tag */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap', justifyContent: 'center' }}>
           <div>
             <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>OPERATION</span>
-            <span className="font-mono" style={{ fontSize: '20px', fontWeight: '800', color: '#D9534F' }}>#027</span>
-          </div>
-
-          <div style={{ width: '1px', height: '28px', background: 'rgba(214, 198, 165, 0.14)' }} />
-
-          <div>
-            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>DISASTER TYPE</span>
-            <span className="font-hud" style={{ fontSize: '17px', fontWeight: '700', color: '#D6C6A5' }}>FLASH FLOOD &amp; CASUALTY RISK</span>
-          </div>
-
-          <div style={{ width: '1px', height: '28px', background: 'rgba(214, 198, 165, 0.14)' }} />
-
-          <div>
-            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>ALERT THREAT</span>
-            <span className="font-mono" style={{ fontSize: '13px', fontWeight: '800', color: '#D9534F', background: 'rgba(217, 83, 79, 0.2)', border: '1px solid rgba(217, 83, 79, 0.45)', padding: '2px 8px', borderRadius: '3px' }}>
-              DEFCON 2
+            <span className="font-mono" style={{ fontSize: '18px', fontWeight: '800', color: '#D9534F' }}>
+              #{activeMission?.missionId || '027'}
             </span>
           </div>
 
           <div style={{ width: '1px', height: '28px', background: 'rgba(214, 198, 165, 0.14)' }} />
 
           <div>
-            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>SECTOR</span>
-            <span className="font-hud" style={{ fontSize: '17px', fontWeight: '700', color: '#C99A45' }}>SOUTH SECTOR</span>
+            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>THEATER LOCATION</span>
+            <span className="font-hud" style={{ fontSize: '15px', fontWeight: '700', color: '#D6C6A5' }}>
+              {activeMission?.locationName || 'Chandigarh'}
+            </span>
+          </div>
+
+          <div style={{ width: '1px', height: '28px', background: 'rgba(214, 198, 165, 0.14)' }} />
+
+          <div>
+            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>COORDINATES</span>
+            <span className="font-mono" style={{ fontSize: '12px', fontWeight: '700', color: '#6EE7B7' }}>
+              {activeMission?.latitude ? activeMission.latitude.toFixed(4) : '30.7333'}° N, {activeMission?.longitude ? activeMission.longitude.toFixed(4) : '76.7794'}° E
+            </span>
+          </div>
+
+          <div style={{ width: '1px', height: '28px', background: 'rgba(214, 198, 165, 0.14)' }} />
+
+          <div>
+            <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', display: 'block' }}>DISASTER VECTOR</span>
+            <span className="font-hud" style={{ fontSize: '15px', fontWeight: '700', color: '#C99A45' }}>
+              {activeMission?.disasterType || 'FLOOD'}
+            </span>
           </div>
         </div>
 

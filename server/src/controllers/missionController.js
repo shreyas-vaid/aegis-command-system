@@ -148,6 +148,9 @@ export async function createMission(req, res) {
       description = '',
       disasterType,
       locationName,
+      locationCountry = '',
+      locationRegion = '',
+      locationDisplayName = '',
       latitude,
       longitude,
       severity = 'HIGH',
@@ -204,6 +207,9 @@ export async function createMission(req, res) {
         description: description.trim(),
         disasterType: normType,
         locationName: locationName.trim(),
+        locationCountry: (locationCountry || '').trim(),
+        locationRegion: (locationRegion || '').trim(),
+        locationDisplayName: (locationDisplayName || locationName).trim(),
         latitude: numLat,
         longitude: numLng,
         severity: severity.toUpperCase(),
@@ -226,6 +232,9 @@ export async function createMission(req, res) {
         description: description.trim(),
         disasterType: normType,
         locationName: locationName.trim(),
+        locationCountry: (locationCountry || '').trim(),
+        locationRegion: (locationRegion || '').trim(),
+        locationDisplayName: (locationDisplayName || locationName).trim(),
         latitude: numLat,
         longitude: numLng,
         severity: severity.toUpperCase(),
@@ -277,6 +286,9 @@ export async function updateMission(req, res) {
       description,
       disasterType,
       locationName,
+      locationCountry,
+      locationRegion,
+      locationDisplayName,
       latitude,
       longitude,
       severity,
@@ -287,6 +299,9 @@ export async function updateMission(req, res) {
     if (name && name.trim()) updates.name = name.trim();
     if (typeof description === 'string') updates.description = description.trim();
     if (locationName && locationName.trim()) updates.locationName = locationName.trim();
+    if (locationCountry !== undefined) updates.locationCountry = String(locationCountry).trim();
+    if (locationRegion !== undefined) updates.locationRegion = String(locationRegion).trim();
+    if (locationDisplayName !== undefined) updates.locationDisplayName = String(locationDisplayName).trim();
     if (latitude !== undefined) {
       const lat = Number(latitude);
       if (!isNaN(lat) && lat >= -90 && lat <= 90) updates.latitude = lat;

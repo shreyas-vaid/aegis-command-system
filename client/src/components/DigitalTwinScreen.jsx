@@ -27,7 +27,8 @@ import { getZone, getZoneExplanation } from '../services/api';
 export default function DigitalTwinScreen({
   zones = [],
   onExplainRisk,
-  onInvestigateUnknown
+  onInvestigateUnknown,
+  activeMission = null
 }) {
   const [activeZoneId, setActiveZoneId] = useState('D');
   const [panelOpen, setPanelOpen] = useState(true);
@@ -114,10 +115,10 @@ export default function DigitalTwinScreen({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span className="font-hud" style={{ fontSize: '13px', letterSpacing: '0.14em', color: '#d6c6a5', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ display: 'inline-block', width: '6px', height: '6px', background: '#6f947d', borderRadius: '50%' }}></span>
-            STAGE 4 // DIGITAL TWIN TOPOLOGY &amp; ZONE RISK MATRIX
+            STAGE 4 // DIGITAL TWIN · {activeMission?.locationName?.toUpperCase() || 'TOPOLOGY'}
           </span>
           <span className="font-mono" style={{ fontSize: '11px', color: '#9fb5a4' }}>
-            SELECT TACTICAL SECTORS (A–E) TO PROBE TELEMETRY
+            {activeMission?.latitude ? `${activeMission.latitude.toFixed(4)}° N, ${activeMission.longitude.toFixed(4)}° E` : 'COORDINATES ACTIVE'} · {activeMission?.name?.toUpperCase() || 'ZONE RISK MATRIX'}
           </span>
           {isSyncingZone && (
             <span className="font-mono" style={{ fontSize: '10px', color: '#38bdf8', letterSpacing: '0.1em', animation: 'pulse 1.5s infinite ease-in-out' }}>
@@ -147,6 +148,7 @@ export default function DigitalTwinScreen({
           hoveredZoneId={hoveredZoneId}
           onSelectZone={handleSelectZone}
           timeOffset={0}
+          activeMission={activeMission}
         />
 
         {/* Floating Technical Readout on Hover */}
