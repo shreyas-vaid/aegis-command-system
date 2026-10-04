@@ -201,6 +201,12 @@ export function updateMissionReport(missionId, reportId, data) {
   });
 }
 
+// ─── DATA FUSION INTELLIGENCE ────────────────────────────────────────
+export function getMissionIntelligence(missionId, forceRefresh = false) {
+  const query = forceRefresh ? '?refresh=true' : '';
+  return request(`/api/missions/${missionId}/intelligence${query}`);
+}
+
 // ─── STATE (Legacy) ──────────────────────────────────────────────────
 export function getState() {
   return request('/api/state');

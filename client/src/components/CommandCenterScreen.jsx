@@ -17,6 +17,7 @@ import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
 import { assignResource } from '../services/api';
 import AegisWeatherWidget from './AegisWeatherWidget';
 import AegisFieldReports from './AegisFieldReports';
+import AegisIntelligenceModule from './AegisIntelligenceModule';
 
 export default function CommandCenterScreen({
   onCreatePlan,
@@ -166,8 +167,12 @@ export default function CommandCenterScreen({
           </p>
         </div>
 
-        {/* Live Weather Intelligence & Human Field Observations Dual Feed */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px', alignItems: 'start' }}>
+        {/* Unified Operational Telemetry Trio: Fused Intelligence | Live Weather | Field Observations */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '14px', alignItems: 'start' }}>
+          <AegisIntelligenceModule
+            missionId={activeMission?.missionId || '027'}
+            activeMission={activeMission}
+          />
           <AegisWeatherWidget
             missionId={activeMission?.missionId || '027'}
             locationName={activeMission?.locationName || 'CHANDIGARH'}

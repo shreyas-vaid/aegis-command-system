@@ -13,6 +13,7 @@ import {
   getMissionReportById,
   updateMissionReport
 } from '../controllers/reportController.js';
+import { getMissionIntelligenceHandler } from '../controllers/intelligenceController.js';
 import { requireAuth, requireRole, optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -24,6 +25,10 @@ const router = express.Router();
 
 // GET /api/missions — List missions for authenticated user's organization
 router.get('/', requireAuth, getMissions);
+
+// ─── DATA FUSION INTELLIGENCE & WORLD STATE ──────────────────────────
+// GET /api/missions/:id/intelligence — Fused world state, deterministic risk score, and WHY breakdown
+router.get('/:id/intelligence', optionalAuth, getMissionIntelligenceHandler);
 
 // GET /api/missions/:id/data/weather — Live meteorological intelligence strictly for operation coordinates
 router.get('/:id/data/weather', optionalAuth, getMissionWeatherHandler);

@@ -240,8 +240,8 @@ app.post('/api/resources/:id/assign', async (req, res) => {
 });
 
 // ─── 6. SIMULATION ENGINE ────────────────────────────────────────────
-// POST /api/simulations — Deterministic forward projection
-app.post('/api/simulations', async (req, res) => {
+// POST /api/simulations & POST /api/simulate — Deterministic forward projection
+const runSimulationHandler = async (req, res) => {
   try {
     const { missionId = "027", timeOffset = 30, actions = [] } = req.body || {};
 
@@ -305,7 +305,10 @@ app.post('/api/simulations', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Simulation failed", details: err.message });
   }
-});
+};
+
+app.post('/api/simulations', runSimulationHandler);
+app.post('/api/simulate', runSimulationHandler);
 
 // ─── 7. AI DECISION SUPPORT RECOMMENDATION ────────────────────────────
 // POST /api/recommend — Structured decision-support recommendations
