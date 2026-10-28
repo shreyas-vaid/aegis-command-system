@@ -35,19 +35,28 @@ const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 // ─── CORS CONFIGURATION ──────────────────────────────────────────────
+const isProduction = process.env.NODE_ENV === 'production';
 const rawOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map(url => url.trim())
   .filter(Boolean);
 
-const allowedOrigins = Array.from(new Set([
-  ...rawOrigins,
-  ...rawOrigins.map(url => url.replace(/\/+$/, '')),
+// Localhost origins strictly limited to development
+const devOrigins = !isProduction ? [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:5000',
   'http://127.0.0.1:5000'
+] : [];
+
+const allowedOrigins = Array.from(new Set([
+  ...rawOrigins,
+  ...rawOrigins.map(url => url.replace(/\/+$/, '')),
+  ...devOrigins
 ])).filter(Boolean);
+
+// Narrow Vercel preview domain pattern for this project only
+const vercelPreviewRegex = /^https:\/\/(zenovation|aegis-disaster-system)(-[a-z0-9-]+)?\.vercel\.app$/i;
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -57,7 +66,11 @@ app.use(cors({
     if (allowedOrigins.includes(origin) || allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
-    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    if (vercelPreviewRegex.test(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    // Reject cleanly without throwing an unhandled Express error
+    return callback(null, false);
   },
   credentials: true
 }));
@@ -74,10 +87,16 @@ app.use('/api/organizations', organizationRoutes);
 
 // ─── 1. HEALTH CHECK ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: "ok",
+  const isConnected = mongoose.connection.readyState === 1;
+  const isProd = process.env.NODE_ENV === 'production';
+  const statusCode = isConnected ? 200 : (isProd ? 503 : 200);
+
+  res.status(statusCode).json({
+    status: isConnected ? "ok" : "degraded",
     service: "AEGIS API",
-    version: "1.0.0"
+    version: "1.0.0",
+    database: isConnected ? "connected" : "disconnected",
+    mode: isConnected ? "LIVE" : "DEMO_FALLBACK"
   });
 });
 
@@ -207,21 +226,21 @@ app.post('/api/resources/:id/assign', async (req, res) => {
       resource = await Resource.findByIdAndUpdate(
         rawId,
         { currentZone: targetZone, status: "DEPLOYED" },
-        { new: true }
+        { returnDocument: 'after' }
       );
     }
     if (!resource) {
       resource = await Resource.findOneAndUpdate(
         { type: rawId.toUpperCase() },
         { currentZone: targetZone, status: "DEPLOYED" },
-        { new: true }
+        { returnDocument: 'after' }
       );
     }
     if (!resource) {
       resource = await Resource.findOneAndUpdate(
         { name: new RegExp(rawId, 'i') },
         { currentZone: targetZone, status: "DEPLOYED" },
-        { new: true }
+        { returnDocument: 'after' }
       );
     }
 
@@ -439,21 +458,25 @@ app.get('/api/state', async (req, res) => {
 
 // ─── START SERVER ────────────────────────────────────────────────────
 export async function startServer() {
+  const isProd = process.env.NODE_ENV === 'production';
   try {
     await connectDB();
-
-    return new Promise((resolve) => {
-      const server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`AEGIS Server listening on 0.0.0.0:${PORT}`);
-        console.log(`CORS enabled for: ${CLIENT_URL}`);
-        console.log(`Health check: http://0.0.0.0:${PORT}/api/health`);
-        resolve(server);
-      });
-    });
   } catch (err) {
-    console.error('Server startup halted due to database error.');
-    process.exit(1);
+    if (isProd) {
+      console.error('FATAL: Server startup halted in production due to database error:', err.message);
+      process.exit(1);
+    }
+    console.warn('WARN: Server starting in degraded demo-only mode without database connection.');
   }
+
+  return new Promise((resolve) => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`AEGIS Server listening on 0.0.0.0:${PORT}`);
+      console.log(`CORS enabled for: ${CLIENT_URL}`);
+      console.log(`Health check: http://0.0.0.0:${PORT}/api/health`);
+      resolve(server);
+    });
+  });
 }
 
 // Auto-run if executed as main module

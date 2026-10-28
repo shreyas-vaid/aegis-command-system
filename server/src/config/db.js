@@ -7,18 +7,19 @@ import mongoose from 'mongoose';
 
 export async function connectDB() {
   const uri = process.env.MONGODB_URI;
+  const isProduction = process.env.NODE_ENV === 'production';
 
   if (!uri || uri.trim() === '') {
+    const errorMsg = 'Missing MONGODB_URI in environment variables.';
     console.error('\n==================================================');
-    console.error('AEGIS DATABASE CONFIGURATION ERROR');
-    console.error('Missing MONGODB_URI in environment variables.');
-    console.error('Please configure your MongoDB connection string in:');
-    console.error('  server/.env');
-    console.error('Example:');
-    console.error('  MONGODB_URI=mongodb://127.0.0.1:27017/aegis');
-    console.error('  or MongoDB Atlas URI');
+    console.error('AEGIS DATABASE CONFIGURATION DIAGNOSTIC');
+    console.error(errorMsg);
+    console.error('Persistence is offline. Only demo/fallback operations available.');
     console.error('==================================================\n');
-    throw new Error('MONGODB_URI is missing in server/.env');
+    if (isProduction) {
+      throw new Error(`Production database configuration error: ${errorMsg}`);
+    }
+    return null;
   }
 
   try {

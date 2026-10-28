@@ -128,10 +128,13 @@ export async function getMissionReports(req, res) {
 
       return res.status(200).json(reports);
     } else {
-      const list = Array.from(inMemoryReports.values())
-        .filter(r => r.missionId === missionQueryId)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      return res.status(200).json(list);
+      if (isDemoMission) {
+        return res.status(200).json(DEMO_REPORTS);
+      }
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Operational field reports cannot be loaded.'
+      });
     }
   } catch (err) {
     console.error('[AEGIS-REPORT] Fetch error:', err.message);
@@ -264,16 +267,9 @@ export async function createMissionReport(req, res) {
         report: newReport
       });
     } else {
-      const mockReport = {
-        _id: 'rep_' + Date.now().toString(36),
-        ...reportData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      inMemoryReports.set(reportId, mockReport);
-      return res.status(201).json({
-        message: 'Field report transmitted successfully (in-memory mode)',
-        report: mockReport
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Field report transmission requires active database persistence.'
       });
     }
   } catch (err) {
@@ -475,7 +471,7 @@ export async function updateMissionReport(req, res) {
       const updated = await Report.findByIdAndUpdate(
         report._id,
         { $set: updates },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
 
       return res.status(200).json({
@@ -483,10 +479,9 @@ export async function updateMissionReport(req, res) {
         report: updated
       });
     } else {
-      Object.assign(report, updates, { updatedAt: new Date().toISOString() });
-      return res.status(200).json({
-        message: 'Field report updated successfully (in-memory mode)',
-        report
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Field report updates require active database persistence.'
       });
     }
   } catch (err) {

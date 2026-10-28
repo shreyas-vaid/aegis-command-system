@@ -130,7 +130,13 @@ export async function getMissionWeatherHandler(req, res) {
 
       return res.status(503).json({
         error: 'Weather Data Unavailable',
-        message: 'Weather provider temporarily unavailable',
+        message: 'External meteorological telemetry provider is temporarily unreachable.',
+        missionId: mission.missionId || targetId,
+        locationName: mission.locationName,
+        locationDisplayName: mission.locationDisplayName || mission.locationName,
+        location: { latitude, longitude },
+        status: 'UNAVAILABLE',
+        isCached: false,
         details: err.message
       });
     }

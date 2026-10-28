@@ -14,6 +14,9 @@
 // Development: VITE_API_URL=http://localhost:5000/api
 // Production:  VITE_API_URL=https://YOUR-RENDER-API-URL/api
 const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+if (!import.meta.env.DEV && !rawApiUrl) {
+  console.warn('[AEGIS-API] VITE_API_URL is not configured in production. Set VITE_API_URL in Vercel Project Settings to your deployed Render URL.');
+}
 const normalizedBase = rawApiUrl
   ? (rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl)
   : (import.meta.env.DEV ? 'http://localhost:5000' : '');
@@ -217,9 +220,8 @@ export function resetState() {
 }
 
 // ─── ZONES ───────────────────────────────────────────────────────────
-export function getZones(missionId) {
-  if (missionId) return request(`/api/missions/${missionId}/zones`);
-  return request('/api/zones');
+export function getZones(missionId = '027') {
+  return request(`/api/missions/${missionId || '027'}/zones`);
 }
 
 export function getZone(id) {
@@ -231,9 +233,8 @@ export function getZoneExplanation(id) {
 }
 
 // ─── INCIDENTS ───────────────────────────────────────────────────────
-export function getIncidents(missionId) {
-  if (missionId) return request(`/api/missions/${missionId}/incidents`);
-  return request('/api/incidents');
+export function getIncidents(missionId = '027') {
+  return request(`/api/missions/${missionId || '027'}/incidents`);
 }
 
 export function createIncident(data) {
@@ -251,9 +252,8 @@ export function updateIncident(id, data) {
 }
 
 // ─── RESOURCES ───────────────────────────────────────────────────────
-export function getResources(missionId) {
-  if (missionId) return request(`/api/missions/${missionId}/resources`);
-  return request('/api/resources');
+export function getResources(missionId = '027') {
+  return request(`/api/missions/${missionId || '027'}/resources`);
 }
 
 export function assignResource(resourceId, zoneId) {

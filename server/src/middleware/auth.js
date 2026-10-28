@@ -2,7 +2,16 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'aegis-command-secret-jwt-key-2026';
+const isProduction = process.env.NODE_ENV === 'production';
+
+export function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (isProduction && (!secret || secret.trim() === '')) {
+    throw new Error('JWT_SECRET environment variable is required in production.');
+  }
+  return secret || 'aegis-command-secret-jwt-key-2026';
+}
+
 const JWT_EXPIRES_IN = '7d';
 
 /**
@@ -16,14 +25,14 @@ export function signToken(user) {
     role: user.role,
     organizationId: user.organizationId || null
   };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
  * Verify a JWT token
  */
 export function verifyToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, getJwtSecret());
 }
 
 /**
@@ -76,7 +85,13 @@ export async function requireAuth(req, res, next) {
         updatedAt: user.updatedAt
       };
     } else {
-      // In-memory or fallback mode
+      if (isProduction) {
+        return res.status(503).json({
+          error: 'Service Unavailable',
+          message: 'Database connection unavailable. Authentication verification offline.'
+        });
+      }
+      // In-memory or fallback mode for development/testing only
       req.user = {
         id: decoded.id,
         name: decoded.name,

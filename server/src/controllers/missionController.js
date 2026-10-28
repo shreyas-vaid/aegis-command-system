@@ -32,10 +32,8 @@ export async function findMissionById(id) {
     }
     return await Mission.findOne({ missionId: id });
   } else {
-    for (const [key, val] of inMemoryMissions.entries()) {
-      if (key === id || val._id === id || val.id === id) {
-        return val;
-      }
+    if (id === '027') {
+      return { ...DEMO_MISSION, isDemoFallback: true, organizationId: DEFAULT_DEMO_ORG._id };
     }
     return null;
   }
@@ -81,13 +79,13 @@ export async function getMissions(req, res) {
 
       return res.status(200).json(missions);
     } else {
-      // In-memory fallback
-      const list = Array.from(inMemoryMissions.values()).filter(m => {
-        if (!includeArchived && m.status === 'ARCHIVED') return false;
-        if (userOrgId && m.organizationId && m.organizationId.toString() !== userOrgId) return false;
-        return true;
-      });
-      return res.status(200).json(list);
+      if (req.user) {
+        return res.status(503).json({
+          error: 'Service Unavailable',
+          message: 'Database connection unavailable. Operational mission list cannot be loaded.'
+        });
+      }
+      return res.status(200).json([{ ...DEMO_MISSION, isDemoFallback: true, organizationId: DEFAULT_DEMO_ORG._id }]);
     }
   } catch (err) {
     console.error('[AEGIS-MISSION] Fetch error:', err);
@@ -222,31 +220,9 @@ export async function createMission(req, res) {
         mission: newMission
       });
     } else {
-      // In-memory fallback
-      const mockMission = {
-        _id: 'm_' + Date.now().toString(36),
-        id: generatedMissionId,
-        missionId: generatedMissionId,
-        organizationId: organizationId.toString(),
-        name: name.trim(),
-        description: description.trim(),
-        disasterType: normType,
-        locationName: locationName.trim(),
-        locationCountry: (locationCountry || '').trim(),
-        locationRegion: (locationRegion || '').trim(),
-        locationDisplayName: (locationDisplayName || locationName).trim(),
-        latitude: numLat,
-        longitude: numLng,
-        severity: severity.toUpperCase(),
-        status: normStatus,
-        createdBy: req.user.id,
-        createdAt: new Date().toISOString()
-      };
-      inMemoryMissions.set(generatedMissionId, mockMission);
-
-      return res.status(201).json({
-        message: 'Operation created successfully (in-memory mode)',
-        mission: mockMission
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Operation creation requires active database persistence.'
       });
     }
   } catch (err) {
@@ -326,16 +302,15 @@ export async function updateMission(req, res) {
     }
 
     if (mongoose.connection.readyState === 1) {
-      const updated = await Mission.findByIdAndUpdate(mission._id, { $set: updates }, { new: true }).lean();
+      const updated = await Mission.findByIdAndUpdate(mission._id, { $set: updates }, { returnDocument: 'after' }).lean();
       return res.status(200).json({
         message: 'Operation updated successfully',
         mission: updated
       });
     } else {
-      Object.assign(mission, updates, { updatedAt: new Date().toISOString() });
-      return res.status(200).json({
-        message: 'Operation updated successfully',
-        mission
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Operation update requires active database persistence.'
       });
     }
   } catch (err) {
@@ -374,18 +349,16 @@ export async function deleteMission(req, res) {
       const archived = await Mission.findByIdAndUpdate(
         mission._id,
         { $set: { status: 'ARCHIVED' } },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
       return res.status(200).json({
         message: 'Operation archived successfully',
         mission: archived
       });
     } else {
-      mission.status = 'ARCHIVED';
-      mission.updatedAt = new Date().toISOString();
-      return res.status(200).json({
-        message: 'Operation archived successfully',
-        mission
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Operation archiving requires active database persistence.'
       });
     }
   } catch (err) {

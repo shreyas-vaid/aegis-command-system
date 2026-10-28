@@ -94,39 +94,9 @@ export async function register(req, res) {
         organization: org
       });
     } else {
-      // In-memory fallback
-      if (inMemoryUsers.has(normalizedEmail)) {
-        return res.status(409).json({ error: 'Email already registered' });
-      }
-
-      const defaultOrg = DEFAULT_DEMO_ORG;
-      const mockId = 'usr_' + Date.now().toString(36);
-      const fallbackUser = {
-        _id: mockId,
-        id: mockId,
-        name: name.trim(),
-        email: normalizedEmail,
-        passwordHash,
-        role: normalizedRole,
-        organizationId: targetOrgId || defaultOrg._id,
-        createdAt: new Date().toISOString()
-      };
-      inMemoryUsers.set(normalizedEmail, fallbackUser);
-
-      const token = signToken(fallbackUser);
-
-      return res.status(201).json({
-        message: 'Operator registered successfully (in-memory mode)',
-        token,
-        user: {
-          id: fallbackUser.id,
-          name: fallbackUser.name,
-          email: fallbackUser.email,
-          role: fallbackUser.role,
-          organizationId: fallbackUser.organizationId,
-          createdAt: fallbackUser.createdAt
-        },
-        organization: defaultOrg
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Operator registration requires active database persistence.'
       });
     }
   } catch (err) {
@@ -149,13 +119,14 @@ export async function login(req, res) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    let user = null;
-
-    if (mongoose.connection.readyState === 1) {
-      user = await User.findOne({ email: normalizedEmail });
-    } else {
-      user = inMemoryUsers.get(normalizedEmail);
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Operator authentication requires active database persistence.'
+      });
     }
+
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
