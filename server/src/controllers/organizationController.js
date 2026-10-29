@@ -62,27 +62,9 @@ export async function createOrganization(req, res) {
         organization: org
       });
     } else {
-      // In-memory fallback
-      const mockId = 'org_' + Date.now().toString(36);
-      const newOrg = {
-        _id: mockId,
-        id: mockId,
-        name: name.trim(),
-        type: normalizedType,
-        location: location.trim(),
-        description: description.trim(),
-        createdBy: req.user.id,
-        createdAt: new Date().toISOString()
-      };
-      inMemoryOrgs.set(mockId, newOrg);
-
-      if (!req.user.organizationId) {
-        req.user.organizationId = mockId;
-      }
-
-      return res.status(201).json({
-        message: 'Organization created successfully (in-memory mode)',
-        organization: newOrg
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Organization creation requires active database persistence.'
       });
     }
   } catch (err) {
@@ -173,14 +155,9 @@ export async function updateOrganization(req, res) {
         organization: org
       });
     } else {
-      const org = inMemoryOrgs.get(orgId);
-      if (!org) {
-        return res.status(404).json({ error: 'Organization not found' });
-      }
-      Object.assign(org, updates, { updatedAt: new Date().toISOString() });
-      return res.status(200).json({
-        message: 'Organization updated successfully',
-        organization: org
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database connection unavailable. Organization update requires active database persistence.'
       });
     }
   } catch (err) {
