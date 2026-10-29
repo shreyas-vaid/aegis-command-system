@@ -119,6 +119,8 @@ npm start
 
 ## ☁️ Render Deployment & Vercel Integration
 
+> 📖 **Complete Step-by-Step Guide**: For full MongoDB Atlas M0 creation steps, Render configuration, and troubleshooting diagnostics, see [DEPLOYMENT.md](../DEPLOYMENT.md).
+
 ### 1. Render Deployment
 1. Connect your GitHub repository to [Render](https://render.com).
 2. Create a new **Web Service** using the repo.
