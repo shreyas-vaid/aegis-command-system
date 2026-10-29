@@ -4,6 +4,7 @@
  */
 
 import mongoose from 'mongoose';
+import dns from 'dns';
 
 export async function connectDB() {
   const uri = process.env.MONGODB_URI;
@@ -29,6 +30,18 @@ export async function connectDB() {
     console.log(`AEGIS DATABASE CONNECTED: ${conn.connection.host}/${conn.connection.name}`);
     return conn;
   } catch (err) {
+    if (err.message && (err.message.includes('querySrv') || err.message.includes('ENOTFOUND') || err.message.includes('ECONNREFUSED'))) {
+      try {
+        dns.setServers(['8.8.8.8', '1.1.1.1']);
+        const fallbackConn = await mongoose.connect(uri, {
+          serverSelectionTimeoutMS: 8000
+        });
+        console.log(`AEGIS DATABASE CONNECTED (DNS fallback): ${fallbackConn.connection.host}/${fallbackConn.connection.name}`);
+        return fallbackConn;
+      } catch (retryErr) {
+        // Fall through to standard error reporting
+      }
+    }
     console.error('\n==================================================');
     console.error('AEGIS DATABASE CONNECTION FAILED');
     console.error('Reason:', err.message);
