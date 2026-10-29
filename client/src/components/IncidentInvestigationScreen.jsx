@@ -186,8 +186,6 @@ export default function IncidentInvestigationScreen({
               key={sig.id}
               onClick={() => setActiveModalSignal(sig)}
               className="hud-panel hud-bracket"
-              maxTilt={6}
-              elevation={14}
               expandOnClick={true}
               data-cursor="probe"
               style={{

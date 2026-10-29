@@ -121,21 +121,6 @@ export default function DigitalTwinMap({
     );
   };
 
-  const [mapTilt, setMapTilt] = useState({ x: 0, y: 0 });
-
-  const handleMapMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setMapTilt({
-      x: -y * 3.5, // rotateX
-      y: x * 3.5   // rotateY
-    });
-  };
-
-  const handleMapMouseLeave = () => {
-    setMapTilt({ x: 0, y: 0 });
-  };
 
   return (
     <div 
@@ -235,10 +220,8 @@ export default function DigitalTwinMap({
         </div>
       </div>
 
-      {/* SVG Map Canvas with Holographic Sand-Table Tilt */}
+      {/* SVG Map Canvas */}
       <div 
-        onMouseMove={handleMapMouseMove}
-        onMouseLeave={handleMapMouseLeave}
         style={{ 
           flex: 1, 
           position: 'relative', 
@@ -246,16 +229,12 @@ export default function DigitalTwinMap({
           height: '100%', 
           minHeight: '440px', 
           background: '#080D0A',
-          perspective: '1200px',
           overflow: 'hidden'
         }}
       >
         <div style={{
           width: '100%',
-          height: '100%',
-          transform: `rotateX(${mapTilt.x.toFixed(2)}deg) rotateY(${mapTilt.y.toFixed(2)}deg)`,
-          transition: 'transform 0.15s ease-out',
-          transformStyle: 'preserve-3d'
+          height: '100%'
         }}>
         
         {/* Subtle grid pattern background */}

@@ -150,17 +150,14 @@ body {
   z-index: 2;
 }
 
-/* Interactive 3D Object Cards & Specular Sheen */
+/* Interactive Object Cards & Specular Sheen */
 .aegis-3d-card-wrap {
-  perspective: 1200px;
-  transform-style: preserve-3d;
+  position: relative;
 }
 
 .aegis-3d-card {
   position: relative;
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
-  transform-style: preserve-3d;
-  will-change: transform;
 }
 
 .aegis-glass-sheen {
@@ -179,13 +176,11 @@ body {
 }
 
 .aegis-parallax-layer {
-  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 10px);
-  transition: transform 0.15s ease-out;
+  position: relative;
 }
 
 .aegis-parallax-reverse {
-  transform: translate3d(calc(var(--parallax-x, 0px) * -0.8), calc(var(--parallax-y, 0px) * -0.8), 6px);
-  transition: transform 0.15s ease-out;
+  position: relative;
 }
 
 /* Radar pulse animation */
@@ -1077,4 +1072,13 @@ body {
   animation: screen-shake-subtle 0.35s ease-in-out;
 }
 
-
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

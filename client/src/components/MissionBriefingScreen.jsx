@@ -21,8 +21,6 @@ export default function MissionBriefingScreen({
     }}>
       <Aegis3DCard
         className="hud-panel hud-bracket" 
-        maxTilt={4}
-        elevation={20}
         style={{
           width: '760px',
           maxWidth: '95vw',
@@ -126,10 +124,10 @@ export default function MissionBriefingScreen({
           </ul>
         </div>
 
-        {/* 3 Telemetry Metrics with 3D Tilt */}
+        {/* 3 Telemetry Metrics */}
         <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
           
-          <Aegis3DCard maxTilt={5} elevation={10} className="metric-box" style={{ textAlign: 'center', background: 'rgba(14, 27, 21, 0.8)', border: '1px solid rgba(111, 148, 125, 0.35)' }}>
+          <Aegis3DCard className="metric-box" style={{ textAlign: 'center', background: 'rgba(14, 27, 21, 0.8)', border: '1px solid rgba(111, 148, 125, 0.35)' }}>
             <span className="metric-title" style={{ textAlign: 'center', color: '#9FB5A4' }}>CURRENT CITY HEALTH</span>
             <div className="font-mono" style={{ fontSize: '26px', fontWeight: '800', color: '#6F947D' }}>
               <AegisAnimatedNumber value={cityHealth} suffix="%" />
@@ -137,7 +135,7 @@ export default function MissionBriefingScreen({
             <div className="metric-subtitle" style={{ textAlign: 'center', color: '#9FB5A4' }}>Baseline Stability</div>
           </Aegis3DCard>
 
-          <Aegis3DCard maxTilt={5} elevation={10} className="metric-box" style={{ textAlign: 'center', background: 'rgba(14, 27, 21, 0.8)', border: '1px solid rgba(201, 154, 69, 0.35)' }}>
+          <Aegis3DCard className="metric-box" style={{ textAlign: 'center', background: 'rgba(14, 27, 21, 0.8)', border: '1px solid rgba(201, 154, 69, 0.35)' }}>
             <span className="metric-title" style={{ textAlign: 'center', color: '#9FB5A4' }}>ACTIVE ALERTS</span>
             <div className="font-mono" style={{ fontSize: '26px', fontWeight: '800', color: '#C99A45' }}>
               <AegisAnimatedNumber value={activeAlerts} />
@@ -145,7 +143,7 @@ export default function MissionBriefingScreen({
             <div className="metric-subtitle" style={{ textAlign: 'center', color: '#D6C6A5' }}>Severe Hazard Warnings</div>
           </Aegis3DCard>
 
-          <Aegis3DCard maxTilt={5} elevation={10} className="metric-box" style={{ textAlign: 'center', background: 'rgba(14, 27, 21, 0.8)', border: '1px solid rgba(139, 114, 168, 0.4)' }}>
+          <Aegis3DCard className="metric-box" style={{ textAlign: 'center', background: 'rgba(14, 27, 21, 0.8)', border: '1px solid rgba(139, 114, 168, 0.4)' }}>
             <span className="metric-title" style={{ textAlign: 'center', color: '#B49DCB' }}>UNKNOWN ZONES</span>
             <div className="font-mono" style={{ fontSize: '26px', fontWeight: '800', color: '#8B72A8' }}>
               <AegisAnimatedNumber value={unknownZones} />
