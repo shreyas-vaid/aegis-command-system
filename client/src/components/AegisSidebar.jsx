@@ -250,7 +250,7 @@ export default function AegisSidebar({
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <Icon 
                         size={17} 
-                        color={isActive ? 'var(--color-cyan)' : 'inherit'}
+                        color={isActive ? 'var(--color-cyan)' : '#111827'}
                       />
                       {item.pulse && (
                         <span style={{
@@ -260,8 +260,8 @@ export default function AegisSidebar({
                           width: '6px',
                           height: '6px',
                           borderRadius: '50%',
-                          background: 'var(--color-cyan)',
-                          boxShadow: '0 0 6px var(--color-cyan)',
+                          background: isActive ? 'var(--color-cyan)' : '#0284c7',
+                          boxShadow: isActive ? '0 0 6px var(--color-cyan)' : '0 0 4px #0284c7',
                           animation: 'pulse 1.8s infinite ease-in-out'
                         }} />
                       )}
@@ -278,7 +278,9 @@ export default function AegisSidebar({
                         <span style={{
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          color: isActive ? 'var(--color-cyan)' : '#111827',
+                          fontWeight: '600'
                         }}>
                           {item.label}
                         </span>
@@ -288,12 +290,13 @@ export default function AegisSidebar({
                             fontSize: '9px',
                             fontFamily: 'var(--font-mono)',
                             fontWeight: '700',
-                            padding: '1px 5px',
+                            padding: '2px 6px',
                             borderRadius: '3px',
-                            background: `${item.badgeColor || '#00F0FF'}22`,
+                            background: isActive ? `${item.badgeColor || '#00F0FF'}22` : '#0f172a',
                             color: item.badgeColor || '#00F0FF',
-                            border: `1px solid ${item.badgeColor || '#00F0FF'}44`,
-                            lineHeight: 1
+                            border: `1px solid ${isActive ? `${item.badgeColor || '#00F0FF'}44` : `${item.badgeColor || '#00F0FF'}88`}`,
+                            lineHeight: 1,
+                            letterSpacing: '0.04em'
                           }}>
                             {item.badge}
                           </span>
