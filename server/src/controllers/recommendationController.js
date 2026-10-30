@@ -12,17 +12,27 @@ import {
   generateZoneRecommendation
 } from '../engine/recommendationEngine.js';
 
+import { findMissionById } from './missionController.js';
+
 // GET /api/recommend
-export function getRecommendation(req, res) {
+export async function getRecommendation(req, res) {
+  const missionId = req.query.missionId || req.params.missionId;
+  const targetMission = missionId ? await findMissionById(missionId).catch(() => null) : null;
+  const disasterType = req.query.disasterType || targetMission?.disasterType || 'FLOOD';
+
   const state = getWorldState();
   const calculatedZones = computeLiveZonesState(state.zones, state.weather, state.resources);
-  const recommendation = generateRecommendations(calculatedZones, state.weather, state.resources);
+  const recommendation = generateRecommendations(calculatedZones, state.weather, state.resources, disasterType);
   res.json(recommendation);
 }
 
 // POST /api/recommend
-export function postRecommendation(req, res) {
-  const { zoneId } = req.body || {};
+export async function postRecommendation(req, res) {
+  const { zoneId, missionId: bodyMissionId, disasterType: bodyDisasterType } = req.body || {};
+  const missionId = bodyMissionId || req.query.missionId;
+  const targetMission = missionId ? await findMissionById(missionId).catch(() => null) : null;
+  const disasterType = bodyDisasterType || req.query.disasterType || targetMission?.disasterType || 'FLOOD';
+
   const state = getWorldState();
   const calculatedZones = computeLiveZonesState(state.zones, state.weather, state.resources);
 
@@ -34,6 +44,6 @@ export function postRecommendation(req, res) {
     return res.json(zoneRec);
   }
 
-  const recommendation = generateRecommendations(calculatedZones, state.weather, state.resources);
+  const recommendation = generateRecommendations(calculatedZones, state.weather, state.resources, disasterType);
   res.json(recommendation);
 }

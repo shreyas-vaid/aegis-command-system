@@ -18,7 +18,190 @@
  * @param {Object} resources - Resource availability and deployment
  * @returns {Object} Structured recommendation
  */
-export function generateRecommendations(zones, weather, resources) {
+export function generateRecommendations(zones, weather, resources, disasterType = 'FLOOD') {
+  const normType = (disasterType || 'FLOOD').toUpperCase();
+
+  if (normType === 'EARTHQUAKE') {
+    return {
+      _engine: "AEGIS DECISION SUPPORT — SIMULATED RECOMMENDATION ENGINE",
+      _notice: "Rule-based analysis. Not a trained ML model.",
+      title: "AEGIS Strategic Co-Pilot: Seismic USAR Intervention",
+      timestamp: new Date().toLocaleTimeString(),
+      assignments: {
+        engineering: { D: 3, C: 2, A: 0, B: 0, E: 1 },
+        medical:     { D: 4, C: 1, B: 1, A: 0, E: 0 },
+        fire:        { B: 3, D: 1, A: 0, C: 0, E: 0 },
+        logistics:   { C: 3, D: 2, B: 2, A: 1, E: 0 }
+      },
+      rationale: [
+        {
+          target: "Zone D (County Hospital Annex Collapse)",
+          primaryFocus: "Medical (4) + Engineering (3)",
+          why: "Emergency structural shoring prevents multi-story pancake collapse, securing access for 40+ trapped patients and staff."
+        },
+        {
+          target: "Zone B (Commercial Gas Line Rupture)",
+          primaryFocus: "Fire/Hazmat (3) + Logistics (2)",
+          why: "Isolates ruptured natural gas main along commercial corridor to halt secondary post-earthquake firestorm ignition."
+        },
+        {
+          target: "Zone C (West Viaduct Seismic Overpass)",
+          primaryFocus: "Engineering (2) + Logistics (3)",
+          why: "Deploys heavy mobile cranes and clears structural bridge debris to reopen primary USAR heavy convoy transit."
+        },
+        {
+          target: "Zone E (Substation Blackout Recon)",
+          primaryFocus: "Engineering (1)",
+          why: "Penetrates power transmission blackout to assess auxiliary transformer damage before evening temperature drops."
+        }
+      ],
+      predictedOutcome: {
+        riskReductionZoneD: "-38%",
+        hospitalLoadStabilization: "Capped at 64% (Avoids Blackout)",
+        zoneERescueETA: "18 minutes",
+        overallCityHealthDelta: "+21% over unmitigated baseline"
+      }
+    };
+  }
+
+  if (normType === 'TORNADO') {
+    return {
+      _engine: "AEGIS DECISION SUPPORT — SIMULATED RECOMMENDATION ENGINE",
+      _notice: "Rule-based analysis. Not a trained ML model.",
+      title: "AEGIS Strategic Co-Pilot: Tornado Swath Debris & Shelter Protocol",
+      timestamp: new Date().toLocaleTimeString(),
+      assignments: {
+        engineering: { D: 3, B: 2, A: 0, C: 0, E: 0 },
+        medical:     { D: 3, C: 2, A: 0, B: 0, E: 1 },
+        fire:        { B: 2, D: 2, A: 0, C: 0, E: 0 },
+        logistics:   { B: 3, C: 2, D: 2, A: 1, E: 0 }
+      },
+      rationale: [
+        {
+          target: "Zone D (Direct Swath Impacted Subdivision)",
+          primaryFocus: "Medical (3) + Engineering (3)",
+          why: "Immediate extraction of residents trapped under structural debris along the active EF-4 ground swath corridor."
+        },
+        {
+          target: "Zone B (Commercial Corridor Highway Blockage)",
+          primaryFocus: "Engineering (2) + Logistics (3)",
+          why: "Deploys heavy rotary cutting crews to remove sheared high-voltage towers blocking primary ambulance arteries."
+        },
+        {
+          target: "Zone C (Underground Shelter Staging)",
+          primaryFocus: "Medical (2) + Logistics (2)",
+          why: "Supplies secondary fortified community bunkers with emergency triage and respiratory supplies."
+        }
+      ],
+      predictedOutcome: {
+        riskReductionZoneD: "-32%",
+        hospitalLoadStabilization: "Capped at 70%",
+        zoneERescueETA: "15 minutes",
+        overallCityHealthDelta: "+19% over unmitigated baseline"
+      }
+    };
+  }
+
+  if (normType === 'WILDFIRE' || normType === 'FIRE') {
+    return {
+      _engine: "AEGIS DECISION SUPPORT — SIMULATED RECOMMENDATION ENGINE",
+      _notice: "Rule-based analysis. Not a trained ML model.",
+      title: "AEGIS Strategic Co-Pilot: Wildfire Perimeter Suppression & Evacuation",
+      timestamp: new Date().toLocaleTimeString(),
+      assignments: {
+        engineering: { C: 3, B: 2, A: 0, D: 0, E: 0 },
+        medical:     { D: 3, C: 1, A: 0, B: 0, E: 0 },
+        fire:        { C: 4, D: 2, E: 2, A: 0, B: 0 },
+        logistics:   { D: 4, B: 2, C: 1, A: 1, E: 0 }
+      },
+      rationale: [
+        {
+          target: "Zone D (Canyon Hospital & Residential Interface)",
+          primaryFocus: "Medical (3) + Logistics (4)",
+          why: "Executes preemptive patient evacuation before smoke zero-visibility completely shuts down the south arterial corridor."
+        },
+        {
+          target: "Zone C (Ridge Fuel Break)",
+          primaryFocus: "Fire (4) + Engineering (3)",
+          why: "Bulldozes critical 60-meter defensible fuel break and deploys aerial retardant line to contain advancing crown fire front."
+        }
+      ],
+      predictedOutcome: {
+        riskReductionZoneD: "-35%",
+        hospitalLoadStabilization: "Evacuated & Stabilized at 55%",
+        zoneERescueETA: "12 minutes",
+        overallCityHealthDelta: "+24% over unmitigated baseline"
+      }
+    };
+  }
+
+  if (normType === 'LANDSLIDE') {
+    return {
+      _engine: "AEGIS DECISION SUPPORT — SIMULATED RECOMMENDATION ENGINE",
+      _notice: "Rule-based analysis. Not a trained ML model.",
+      title: "AEGIS Strategic Co-Pilot: Debris Flow Excavation & Slope Shoring",
+      timestamp: new Date().toLocaleTimeString(),
+      assignments: {
+        engineering: { D: 4, C: 2, A: 0, B: 0, E: 0 },
+        medical:     { D: 3, C: 1, A: 0, B: 0, E: 0 },
+        fire:        { C: 2, D: 1, A: 0, B: 0, E: 0 },
+        logistics:   { B: 3, D: 2, C: 1, A: 1, E: 0 }
+      },
+      rationale: [
+        {
+          target: "Zone D (Buried Mountain Clinic Arterial)",
+          primaryFocus: "Engineering (4) + Medical (3)",
+          why: "Mobilizes excavators and front loaders to clear 15,000m³ of saturated rock debris severing medical access."
+        },
+        {
+          target: "Zone C (River Damming Hazard)",
+          primaryFocus: "Engineering (2) + Logistics (1)",
+          why: "Constructs emergency spillway bypass to relieve impounded debris dam before catastrophic flood burst."
+        }
+      ],
+      predictedOutcome: {
+        riskReductionZoneD: "-30%",
+        hospitalLoadStabilization: "Capped at 66%",
+        zoneERescueETA: "20 minutes",
+        overallCityHealthDelta: "+17% over unmitigated baseline"
+      }
+    };
+  }
+
+  if (normType === 'CYCLONE' || normType === 'STORM') {
+    return {
+      _engine: "AEGIS DECISION SUPPORT — SIMULATED RECOMMENDATION ENGINE",
+      _notice: "Rule-based analysis. Not a trained ML model.",
+      title: "AEGIS Strategic Co-Pilot: Cyclone Eyewall Surge & Marine Protocol",
+      timestamp: new Date().toLocaleTimeString(),
+      assignments: {
+        engineering: { C: 3, D: 2, A: 0, B: 0, E: 0 },
+        medical:     { D: 3, C: 2, A: 0, B: 0, E: 0 },
+        fire:        { E: 2, C: 2, A: 0, B: 0, D: 0 },
+        logistics:   { B: 4, C: 2, D: 2, A: 1, E: 0 }
+      },
+      rationale: [
+        {
+          target: "Zone D (Maritime Hospital Surge Defense)",
+          primaryFocus: "Medical (3) + Engineering (2)",
+          why: "Deploys auxiliary mobile diesel pumps and barrier bladders to prevent 4.2m seawater surge from drowning ICU electrical core."
+        },
+        {
+          target: "Zone C (Harbor Basin Evacuation)",
+          primaryFocus: "Logistics (2) + Engineering (3)",
+          why: "Reroutes coastal traffic inland away from overtopped municipal seawall and secures loose shipping containers."
+        }
+      ],
+      predictedOutcome: {
+        riskReductionZoneD: "-36%",
+        hospitalLoadStabilization: "Capped at 65%",
+        zoneERescueETA: "14 minutes",
+        overallCityHealthDelta: "+20% over unmitigated baseline"
+      }
+    };
+  }
+
+  // DEFAULT: FLOOD (SCENARIO #027)
   return {
     _engine: "AEGIS DECISION SUPPORT — SIMULATED RECOMMENDATION ENGINE",
     _notice: "Rule-based analysis. Not a trained ML model.",

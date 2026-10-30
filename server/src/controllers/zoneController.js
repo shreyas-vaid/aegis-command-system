@@ -34,24 +34,93 @@ export async function getZones(req, res) {
   res.json(formatted);
 }
 
+import { DEMO_MISSIONS } from '../seed/seedData.js';
+
+function generateDemoZonesForHazard(missionId, disasterType, missionName) {
+  const normType = (disasterType || 'FLOOD').toUpperCase();
+
+  const hazardLabels = {
+    EARTHQUAKE: {
+      A: 'Uptown Base Staging',
+      B: 'Commercial Masonry Core',
+      C: 'Fault Epicenter Corridor',
+      D: 'County Trauma Center Annex',
+      E: 'Substation Grid Blackout'
+    },
+    TORNADO: {
+      A: 'Prairie Command Depot',
+      B: 'Highway 81 Intercept',
+      C: 'Underground Shelter Staging',
+      D: 'Direct Swath Subdivision',
+      E: 'Downed Repeater Perimeter'
+    },
+    WILDFIRE: {
+      A: 'Valley Base Fire Depot',
+      B: 'Agricultural Defensible Buffer',
+      C: 'Timber Ridge Fuel Line',
+      D: 'Canyon Hospital Interface',
+      E: 'Active Crown Flame Front'
+    },
+    LANDSLIDE: {
+      A: 'Valley Base Staging',
+      B: 'River Confluence Highway',
+      C: 'Escarpment Wall Fissure',
+      D: 'Mountain Clinic Access Road',
+      E: 'Colluvial Debris Apex'
+    },
+    CYCLONE: {
+      A: 'Inland High Ground Depot',
+      B: 'Commercial Promenade',
+      C: 'Harbor Basin & Fisher Pier',
+      D: 'Maritime Hospital Surge Wing',
+      E: 'Barrier Island Eye Impact'
+    }
+  };
+
+  const labels = hazardLabels[normType] || {
+    A: 'North Uplands / Depot',
+    B: 'Commercial District',
+    C: 'River Basin Corridor',
+    D: 'South General Trauma Center',
+    E: 'East Delta Blackout'
+  };
+
+  return [
+    { zoneId: 'A', missionId, name: labels.A, risk: 18, population: 3800, health: 82, roadAccess: 88, infrastructure: 92, reports: 2, connectivity: 98, hospitalAccess: 95, status: 'STABLE' },
+    { zoneId: 'B', missionId, name: labels.B, risk: 48, population: 7600, health: 52, roadAccess: 64, infrastructure: 74, reports: 6, connectivity: 89, hospitalAccess: 70, status: 'WARNING' },
+    { zoneId: 'C', missionId, name: labels.C, risk: 74, population: 4200, health: 26, roadAccess: 38, infrastructure: 45, reports: 11, connectivity: 68, hospitalAccess: 40, status: 'HIGH_RISK' },
+    { zoneId: 'D', missionId, name: labels.D, risk: 96, population: 3100, health: 4, roadAccess: 22, infrastructure: 39, reports: 14, connectivity: 42, hospitalAccess: 18, status: 'CRITICAL' },
+    { zoneId: 'E', missionId, name: labels.E, risk: 78, population: 1900, health: 22, roadAccess: 25, infrastructure: 30, reports: 0, connectivity: 12, hospitalAccess: 10, status: 'UNKNOWN' }
+  ];
+}
+
 // GET /api/missions/:missionId/zones
 export async function getZonesByMission(req, res) {
+  const mId = req.params.missionId;
   const state = getWorldState();
-  if (req.params.missionId !== state.incidentId) {
-    // If not matching default, check if in MongoDB
-    if (isDBConnected()) {
-      try {
-        const dbZones = await Zone.find({ missionId: req.params.missionId });
-        if (dbZones && dbZones.length > 0) {
-          return res.json(dbZones.map(z => formatZone(z.toObject())));
-        }
-      } catch (err) {
-        console.warn('[AEGIS-ZONE] DB query error:', err.message);
+
+  if (isDBConnected()) {
+    try {
+      const dbZones = await Zone.find({ missionId: mId });
+      if (dbZones && dbZones.length > 0) {
+        return res.json(dbZones.map(z => formatZone(z.toObject())));
       }
+    } catch (err) {
+      console.warn('[AEGIS-ZONE] DB query error:', err.message);
     }
-    return res.status(404).json({ error: "Mission not found" });
   }
-  return getZones(req, res);
+
+  if (mId === '027' || mId === state.incidentId) {
+    return getZones(req, res);
+  }
+
+  const demoMatch = DEMO_MISSIONS.find(m => m.missionId === mId);
+  if (demoMatch) {
+    const hazardZones = generateDemoZonesForHazard(mId, demoMatch.disasterType, demoMatch.name);
+    return res.json(hazardZones.map(formatZone));
+  }
+
+  return res.status(404).json({ error: "Mission not found" });
 }
 
 // GET /api/zones/:id

@@ -19,9 +19,11 @@ import {
 import { AegisTimeControl, AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
 import { runSimulation } from '../services/api';
+import { getHazardConfig } from '../services/hazardConfig';
 
 export default function DisasterSimulationScreen({
-  onProceedToChess
+  onProceedToChess,
+  activeMission = null
 }) {
   const [timeOffset, setTimeOffset] = useState(0);
   const [simData, setSimData] = useState(null);
@@ -29,6 +31,9 @@ export default function DisasterSimulationScreen({
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedZone, setSelectedZone] = useState('D');
   const timerRef = useRef(null);
+
+  const missionId = activeMission?.missionId || '027';
+  const hazard = getHazardConfig(activeMission?.disasterType);
 
   // Auto-play timer
   useEffect(() => {
@@ -54,7 +59,7 @@ export default function DisasterSimulationScreen({
     let isMounted = true;
     setIsSimulating(true);
     runSimulation({
-      missionId: '027',
+      missionId,
       timeOffset,
       actions: []
     })
@@ -73,7 +78,7 @@ export default function DisasterSimulationScreen({
       });
 
     return () => { isMounted = false; };
-  }, [timeOffset]);
+  }, [missionId, timeOffset]);
 
   // Dynamic values that evolve with timeOffset matching exact specs with backend sync
   const fallbackRoad17 = timeOffset === 0 ? 22 : timeOffset === 15 ? 12 : timeOffset === 30 ? 4 : 0;
@@ -134,12 +139,12 @@ export default function DisasterSimulationScreen({
               letterSpacing: '0.12em',
               padding: '2px 8px',
               borderRadius: '3px',
-              background: 'rgba(245, 158, 11, 0.12)',
-              color: '#f59e0b',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
+              background: `${hazard.badgeColor}22`,
+              color: hazard.badgeColor,
+              border: `1px solid ${hazard.badgeColor}44`,
               fontWeight: 700
             }}>
-              SIMULATION ENGINE // TEMPORAL CASCADE
+              SIMULATION ENGINE // {hazard.badge} FORWARD CASCADE
             </span>
             {isSimulating && (
               <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#00F0FF', animation: 'pulse 1.5s infinite ease-in-out' }}>
@@ -148,7 +153,7 @@ export default function DisasterSimulationScreen({
             )}
           </div>
           <h2 className="font-hud" style={{ fontSize: '26px', fontWeight: '800', color: '#F1F5F9', margin: 0, letterSpacing: '0.04em' }}>
-            DISASTER CASCADE PROJECTION & SECTOR RISK
+            {hazard.simulationTitle}
           </h2>
         </div>
 

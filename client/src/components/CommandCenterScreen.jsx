@@ -40,6 +40,7 @@ import {
 import DigitalTwinMap from './DigitalTwinMap';
 import AegisWeatherWidget from './AegisWeatherWidget';
 import AegisFieldReports from './AegisFieldReports';
+import { getHazardConfig } from '../services/hazardConfig';
 
 export default function CommandCenterScreen({
   onCreatePlan,
@@ -74,6 +75,8 @@ export default function CommandCenterScreen({
   const [intelError, setIntelError] = useState(null);
 
   const missionId = activeMission?.missionId || '027';
+  const hazardConfig = getHazardConfig(activeMission?.disasterType || 'FLOOD');
+  const operationalDirective = activeMission?.description || intelligence?.summary || (activeMission?.missionId === '027' ? "Secure emergency vehicle transit to South General Hospital (Zone D) & penetrate communication blackout in Sector E." : "Coordinate perimeter evacuation, stabilize critical sectors, and maintain operational telemetry.");
 
   // Fetch operational intelligence and recommendations
   const loadOperationalData = useCallback(async (isRefresh = false) => {
@@ -178,7 +181,26 @@ export default function CommandCenterScreen({
 
   // Priority attention items from intelligence/zones
   const priorityItems = useMemo(() => {
-    const items = [
+    if (zonesList && zonesList.length > 0 && activeMission && (activeMission.missionId !== '027' || activeMission.disasterType !== 'FLOOD')) {
+      const sorted = [...zonesList].sort((a, b) => (b.risk || 0) - (a.risk || 0));
+      return sorted.slice(0, 3).map(z => ({
+        id: z.id || z.zoneId,
+        type: 'ZONE',
+        name: `ZONE ${z.id || z.zoneId} // ${(z.name || 'SECTOR').toUpperCase()}`,
+        riskLevel: z.status === 'CRITICAL' ? 'CRITICAL' : z.status === 'UNKNOWN' ? 'UNKNOWN RISK' : `${z.status || 'HIGH'} RISK`,
+        riskScore: z.risk || 75,
+        badgeStyle: z.status === 'CRITICAL' ? 'badge-critical' : z.status === 'UNKNOWN' ? 'badge-inactive' : 'badge-warning',
+        severityClass: z.status === 'CRITICAL' ? 'severity-critical' : z.status === 'UNKNOWN' ? 'severity-unknown' : 'severity-warning',
+        reason: z.criticalAsset ? `Primary exposed facility: ${z.criticalAsset}. High hazard vulnerability.` : (z.description || `Active operational alert in sector with vulnerability index at ${z.risk}%.`),
+        indicator: z.isUnknown ? 'INFORMATION GAP: HIGH · RECON REQUIRED' : `CONFIDENCE: ${z.confidence || 88}% · SENSORS CORRELATED`,
+        indicatorType: z.isUnknown ? 'GAP' : 'CONFIDENCE',
+        actionLabel: 'VIEW ZONE MAP',
+        stageTarget: 'map',
+        zoneId: z.id || z.zoneId
+      }));
+    }
+
+    return [
       {
         id: 'D',
         type: 'ZONE',
@@ -225,9 +247,7 @@ export default function CommandCenterScreen({
         zoneId: 'C'
       }
     ];
-
-    return items;
-  }, []);
+  }, [zonesList, activeMission]);
 
   // Format last updated timestamp
   const lastUpdateTime = useMemo(() => {
@@ -303,7 +323,7 @@ export default function CommandCenterScreen({
             </div>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
                 <span className="aegis-badge badge-sand">
                   OPERATION #{missionId}
                 </span>
@@ -311,8 +331,18 @@ export default function CommandCenterScreen({
                   <span className="aegis-badge-dot" />
                   DEFCON 2 · ACTIVE CRISIS
                 </span>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  THEATER: {activeMission?.disasterType || 'FLOOD INUNDATION'}
+                <span style={{
+                  fontSize: '9px',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: '800',
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  background: `${hazardConfig.badgeColor}22`,
+                  color: hazardConfig.badgeColor,
+                  border: `1px solid ${hazardConfig.badgeColor}55`,
+                  letterSpacing: '0.06em'
+                }}>
+                  {hazardConfig.badge} · {hazardConfig.name.toUpperCase()}
                 </span>
               </div>
 
@@ -406,7 +436,7 @@ export default function CommandCenterScreen({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Target size={14} color="var(--color-sand)" />
             <span>
-              <strong style={{ color: 'var(--text-primary)' }}>DIRECTIVE:</strong> Secure emergency vehicle transit to South General Hospital (Zone D) & penetrate communication blackout in Sector E.
+              <strong style={{ color: 'var(--text-primary)' }}>DIRECTIVE:</strong> {operationalDirective}
             </span>
           </div>
 
@@ -896,14 +926,16 @@ export default function CommandCenterScreen({
                   lineHeight: 1.4,
                   color: 'var(--text-secondary)'
                 }}>
-                  {currentZone.id === 'D' ? (
+                  {currentZone?.criticalAsset ? (
+                    <span><strong>Sector {currentZone.id} Alert:</strong> Critical asset exposed: {currentZone.criticalAsset}. Sector vulnerability risk score is {currentZone.risk}%.</span>
+                  ) : currentZone.id === 'D' && (!activeMission || activeMission.missionId === '027') ? (
                     <span><strong>Sector D Alert:</strong> South General Trauma Center represents the primary critical path. Bridge and Road 17 blockage threatens collapse of regional triage capacity.</span>
-                  ) : currentZone.id === 'E' ? (
+                  ) : currentZone.id === 'E' && (!activeMission || activeMission.missionId === '027') ? (
                     <span><strong>Sector E Alert:</strong> Complete RF blackout. Unmonitored civilian enclave with suspected flood accumulation behind railway embankment.</span>
-                  ) : currentZone.id === 'C' ? (
+                  ) : currentZone.id === 'C' && (!activeMission || activeMission.missionId === '027') ? (
                     <span><strong>Sector C Alert:</strong> River corridor berm is taking peak overflow. Engineering reinforcement recommended to protect arterial roads.</span>
                   ) : (
-                    <span><strong>Operational Status:</strong> Sector perimeter remains stable. Minor pooling reported along local access roads.</span>
+                    <span><strong>Sector {currentZone.id} Status:</strong> Operational risk index at {currentZone.risk}%. {currentZone.status === 'CRITICAL' ? 'Immediate tactical intervention required.' : 'Perimeter surveillance and staging in progress.'}</span>
                   )}
                 </div>
 
@@ -1201,10 +1233,10 @@ export default function CommandCenterScreen({
                 </span>
               </div>
               <div className="font-mono" style={{ fontSize: '10px', color: 'var(--color-sand-light)', marginBottom: '6px' }}>
-                TARGET: ZONE D (SOUTH GENERAL TRAUMA CENTER)
+                TARGET: {recommendationsData?.primaryRecommendation?.targetZoneName || (activeMission && activeMission.missionId !== '027' ? `ZONE ${zonesList.find(z => z.status === 'CRITICAL')?.id || 'D'} (${zonesList.find(z => z.status === 'CRITICAL')?.name || 'CRITICAL SECTOR'})` : 'ZONE D (SOUTH GENERAL TRAUMA CENTER)')}
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
-                Clearing arterial Road 17 eliminates the single bottleneck cutting off 2,900 civilians and relieves 94% hospital overload before triage collapse.
+                {recommendationsData?.primaryRecommendation?.rationale || (activeMission && activeMission.missionId !== '027' ? `Prioritizing immediate tactical response to secure critical infrastructure and prevent cascading sector collapse.` : 'Clearing arterial Road 17 eliminates the single bottleneck cutting off 2,900 civilians and relieves 94% hospital overload before triage collapse.')}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '8px' }}>

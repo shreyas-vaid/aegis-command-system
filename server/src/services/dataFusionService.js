@@ -5,6 +5,7 @@ import Report from '../models/Report.js';
 import { findMissionById } from '../controllers/missionController.js';
 import { getLiveWeather } from './weatherService.js';
 import { calculateFusedRisk } from './riskEngine.js';
+import { hazardRegistry } from './hazards/hazardRegistry.js';
 import { DEMO_REPORTS } from '../controllers/reportController.js';
 import { DEMO_ZONES } from '../seed/seedData.js';
 
@@ -83,8 +84,8 @@ export async function fuseMissionIntelligence(missionId, options = {}) {
     zones = DEMO_ZONES;
   }
 
-  // 5. Deterministic Risk Fusion Engine Calculation
-  const fused = calculateFusedRisk({
+  // 5. Deterministic Risk Fusion Engine Calculation via Unified Hazard Registry
+  const fused = hazardRegistry.assessRisk({
     weather,
     reports,
     zones,

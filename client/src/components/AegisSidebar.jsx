@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldAlert, 
   LayoutDashboard, 
@@ -11,12 +11,26 @@ import {
   Sliders, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
+  Plus,
+  Check,
+  Globe,
   Zap,
   Activity,
   Layers,
   UserCheck,
   Lock
 } from 'lucide-react';
+import { getHazardConfig } from '../services/hazardConfig';
+
+const FALLBACK_MISSIONS = [
+  { missionId: '027', name: 'Flash Flood Cascade', disasterType: 'FLOOD', locationDisplayName: 'Chandigarh, Sector 17' },
+  { missionId: '104', name: 'Ridge Fault Seismic Rupture', disasterType: 'EARTHQUAKE', locationDisplayName: 'LA Basin / San Fernando' },
+  { missionId: '209', name: 'Supercell Vortex Corridor', disasterType: 'TORNADO', locationDisplayName: 'Moore / OKC Metro' },
+  { missionId: '315', name: 'Canyon Firestorm Front', disasterType: 'WILDFIRE', locationDisplayName: 'Sonoma Ridge' },
+  { missionId: '418', name: 'Escarpment Debris Flow', disasterType: 'LANDSLIDE', locationDisplayName: 'Cascade Pass' },
+  { missionId: '522', name: 'Coastal Surge & Eyewall Array', disasterType: 'CYCLONE', locationDisplayName: 'Biscayne Bay' }
+];
 
 export default function AegisSidebar({
   activePage = 'live-ops',
@@ -30,8 +44,20 @@ export default function AegisSidebar({
   onOpenProfile,
   onOpenAuth,
   alertCount = 7,
-  criticalIncidentsCount = 2
+  criticalIncidentsCount = 2,
+  activeMissionId = '027',
+  activeMission = null,
+  missionsList = [],
+  onSelectMission = () => {},
+  onOpenNewOperation = () => {}
 }) {
+  const [isOpSelectorOpen, setIsOpSelectorOpen] = useState(false);
+
+  // Unified missions list
+  const availableMissions = missionsList && missionsList.length > 0 ? missionsList : FALLBACK_MISSIONS;
+  const currentHazard = getHazardConfig(activeMission?.disasterType || 'FLOOD');
+  const currentMissionName = activeMission?.name || (availableMissions.find(m => (m.missionId || m.id) === activeMissionId)?.name) || 'Flash Flood Cascade';
+
   const navSections = [
     {
       group: 'COMMAND',
@@ -199,6 +225,236 @@ export default function AegisSidebar({
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
+      </div>
+
+      {/* Operation / Theater Switcher HUD */}
+      <div style={{
+        position: 'relative',
+        padding: collapsed ? '10px 8px' : '10px 14px',
+        borderBottom: '1px solid var(--border-subtle)',
+        background: 'rgba(5, 10, 20, 0.65)'
+      }}>
+        {collapsed ? (
+          <button
+            onClick={() => setIsOpSelectorOpen(!isOpSelectorOpen)}
+            title={`Active: OP #${activeMissionId} (${currentHazard.badge}) - Click to switch`}
+            style={{
+              width: '100%',
+              height: '32px',
+              borderRadius: '4px',
+              background: 'rgba(0, 240, 255, 0.08)',
+              border: `1px solid ${currentHazard.badgeColor}66`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: currentHazard.badgeColor
+            }}
+          >
+            <Globe size={15} />
+          </button>
+        ) : (
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '5px'
+            }}>
+              <span className="font-mono" style={{
+                fontSize: '9px',
+                color: 'var(--text-muted)',
+                letterSpacing: '0.12em',
+                fontWeight: '700'
+              }}>
+                ACTIVE THEATER
+              </span>
+              <span style={{
+                fontSize: '8.5px',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: '800',
+                padding: '1px 5px',
+                borderRadius: '2px',
+                background: `${currentHazard.badgeColor}22`,
+                color: currentHazard.badgeColor,
+                border: `1px solid ${currentHazard.badgeColor}55`,
+                letterSpacing: '0.08em'
+              }}>
+                {currentHazard.badge}
+              </span>
+            </div>
+
+            <button
+              onClick={() => setIsOpSelectorOpen(!isOpSelectorOpen)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '7px 9px',
+                borderRadius: '4px',
+                background: 'var(--bg-surface-elevated)',
+                border: isOpSelectorOpen ? '1px solid var(--color-cyan)' : '1px solid var(--border-subtle)',
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1, marginRight: '6px' }}>
+                <div className="font-mono" style={{ fontSize: '10px', color: 'var(--color-cyan)', fontWeight: '700' }}>
+                  OP #{activeMission?.missionId || activeMissionId || '027'}
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: '#FFFFFF',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {currentMissionName}
+                </div>
+              </div>
+              <ChevronDown 
+                size={14} 
+                color="var(--color-cyan)" 
+                style={{
+                  transform: isOpSelectorOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s ease',
+                  flexShrink: 0
+                }}
+              />
+            </button>
+          </div>
+        )}
+
+        {/* Floating Mission Switcher Dropdown */}
+        {isOpSelectorOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: collapsed ? '60px' : '10px',
+            width: '280px',
+            background: 'rgba(8, 14, 24, 0.98)',
+            border: '1px solid var(--color-cyan)',
+            borderRadius: '6px',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.75), 0 0 15px rgba(0, 240, 255, 0.2)',
+            backdropFilter: 'blur(16px)',
+            zIndex: 10000,
+            overflow: 'hidden',
+            animation: 'fadeIn 0.15s ease'
+          }}>
+            <div style={{
+              padding: '10px 12px',
+              borderBottom: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'rgba(0, 240, 255, 0.05)'
+            }}>
+              <span className="font-mono" style={{ fontSize: '10px', fontWeight: '800', color: 'var(--color-cyan)', letterSpacing: '0.1em' }}>
+                SWITCH DISASTER THEATER
+              </span>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                {availableMissions.length} THEATERS
+              </span>
+            </div>
+
+            <div style={{ maxHeight: '280px', overflowY: 'auto', padding: '6px' }}>
+              {availableMissions.map((m) => {
+                const mId = m.missionId || m.id || m._id;
+                const isSelected = (mId === (activeMission?.missionId || activeMissionId));
+                const hz = getHazardConfig(m.disasterType);
+
+                return (
+                  <button
+                    key={mId}
+                    onClick={() => {
+                      onSelectMission(m);
+                      setIsOpSelectorOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      padding: '8px 10px',
+                      borderRadius: '4px',
+                      background: isSelected ? 'rgba(0, 240, 255, 0.12)' : 'transparent',
+                      border: isSelected ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      marginBottom: '3px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                        <span className="font-mono" style={{ fontSize: '10px', fontWeight: '700', color: isSelected ? 'var(--color-cyan)' : '#FFFFFF' }}>
+                          #{mId}
+                        </span>
+                        <span style={{
+                          fontSize: '8px',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: '800',
+                          padding: '1px 4px',
+                          borderRadius: '2px',
+                          background: `${hz.badgeColor}22`,
+                          color: hz.badgeColor,
+                          border: `1px solid ${hz.badgeColor}44`,
+                          lineHeight: 1
+                        }}>
+                          {hz.badge}
+                        </span>
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: isSelected ? '#FFFFFF' : '#CBD5E1',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {m.name}
+                      </div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.locationDisplayName || m.locationName || 'Global Theater'}
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <Check size={14} color="var(--color-cyan)" style={{ marginTop: '4px', flexShrink: 0 }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{
+              padding: '8px 10px',
+              borderTop: '1px solid var(--border-subtle)',
+              background: 'rgba(0, 0, 0, 0.3)'
+            }}>
+              <button
+                onClick={() => {
+                  setIsOpSelectorOpen(false);
+                  onOpenNewOperation();
+                }}
+                className="aegis-btn aegis-btn-primary"
+                style={{
+                  width: '100%',
+                  fontSize: '10px',
+                  padding: '6px 10px',
+                  justifyContent: 'center'
+                }}
+              >
+                <Plus size={12} />
+                <span>+ COMMISSION NEW OPERATION</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Nav Sections List */}

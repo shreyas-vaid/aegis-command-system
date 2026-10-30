@@ -1,20 +1,23 @@
 import mongoose from 'mongoose';
 import Mission from '../models/Mission.js';
 import { getOrCreateDefaultOrg, DEFAULT_DEMO_ORG } from '../services/organizationService.js';
-import { DEMO_MISSION } from '../seed/seedData.js';
+import { DEMO_MISSION, DEMO_MISSIONS } from '../seed/seedData.js';
 
 // In-memory fallback map for offline / test resilience
-const inMemoryMissions = new Map([
-  ["027", { ...DEMO_MISSION, organizationId: DEFAULT_DEMO_ORG._id }]
-]);
+const inMemoryMissions = new Map(
+  DEMO_MISSIONS.map(m => [m.missionId, { ...m, organizationId: DEFAULT_DEMO_ORG._id }])
+);
 
 const VALID_STATUSES = ['PLANNING', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'];
 const VALID_DISASTER_TYPES = [
   'FLOOD',
   'FLASH_FLOOD',
   'FIRE',
+  'WILDFIRE',
   'EARTHQUAKE',
+  'TORNADO',
   'STORM',
+  'CYCLONE',
   'INDUSTRIAL',
   'LANDSLIDE',
   'HEATWAVE',
@@ -30,13 +33,16 @@ export async function findMissionById(id) {
       const byMongoId = await Mission.findById(id);
       if (byMongoId) return byMongoId;
     }
-    return await Mission.findOne({ missionId: id });
-  } else {
-    if (id === '027') {
-      return { ...DEMO_MISSION, isDemoFallback: true, organizationId: DEFAULT_DEMO_ORG._id };
-    }
-    return null;
+    const byCustomId = await Mission.findOne({ missionId: id });
+    if (byCustomId) return byCustomId;
   }
+  
+  // In-memory or demo fallback
+  const demoMatch = DEMO_MISSIONS.find(m => m.missionId === id);
+  if (demoMatch) {
+    return { ...demoMatch, isDemoFallback: true, organizationId: DEFAULT_DEMO_ORG._id };
+  }
+  return inMemoryMissions.get(id) || null;
 }
 
 /**
@@ -64,17 +70,19 @@ export async function getMissions(req, res) {
 
       let missions = await Mission.find(filter).sort({ createdAt: -1 }).lean();
 
-      // If user belongs to default demo org and no mission exists yet, seed 027
-      if (missions.length === 0 && (!userOrgId || userOrgId === DEFAULT_DEMO_ORG._id)) {
+      // If user belongs to default demo org and only 027 or no missions exist yet, seed benchmark missions
+      if ((!userOrgId || userOrgId === DEFAULT_DEMO_ORG._id) && missions.length < DEMO_MISSIONS.length) {
         const demoOrg = await getOrCreateDefaultOrg();
-        let demoM = await Mission.findOne({ missionId: "027" }).lean();
-        if (!demoM) {
-          demoM = await Mission.create({
-            ...DEMO_MISSION,
-            organizationId: demoOrg._id
-          });
+        for (const dm of DEMO_MISSIONS) {
+          const exists = await Mission.findOne({ missionId: dm.missionId });
+          if (!exists) {
+            await Mission.create({
+              ...dm,
+              organizationId: demoOrg._id
+            });
+          }
         }
-        missions = [demoM];
+        missions = await Mission.find(filter).sort({ createdAt: -1 }).lean();
       }
 
       return res.status(200).json(missions);
@@ -85,7 +93,7 @@ export async function getMissions(req, res) {
           message: 'Database connection unavailable. Operational mission list cannot be loaded.'
         });
       }
-      return res.status(200).json([{ ...DEMO_MISSION, isDemoFallback: true, organizationId: DEFAULT_DEMO_ORG._id }]);
+      return res.status(200).json(DEMO_MISSIONS.map(m => ({ ...m, isDemoFallback: true, organizationId: DEFAULT_DEMO_ORG._id })));
     }
   } catch (err) {
     console.error('[AEGIS-MISSION] Fetch error:', err);

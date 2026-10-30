@@ -12,7 +12,14 @@
  * ────────────────────────────────────────────────────────────────────
  */
 
+import { hazardRegistry } from './hazards/hazardRegistry.js';
+
 export function calculateFusedRisk({ weather, reports = [], zones = [], mission = {} }) {
+  const normType = (mission.disasterType || 'FLOOD').toUpperCase();
+  if (normType !== 'FLOOD' && normType !== 'FLASH_FLOOD') {
+    return hazardRegistry.assessRisk({ weather, reports, zones, mission });
+  }
+
   const why = [];
   const informationGaps = [];
 

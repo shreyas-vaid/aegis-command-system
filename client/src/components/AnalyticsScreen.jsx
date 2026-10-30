@@ -15,6 +15,7 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { AegisAnimatedNumber } from './aegis-interactive';
+import { getHazardConfig } from '../services/hazardConfig';
 
 export default function AnalyticsScreen({
   worldState = null,
@@ -24,14 +25,39 @@ export default function AnalyticsScreen({
   const activeAlerts = worldState?.activeAlerts ?? 7;
   const hospitalLoad = worldState?.hospitalLoad ?? 72;
 
+  const hazard = getHazardConfig(activeMission?.disasterType || 'FLOOD');
+
   // Real-time disaster trend metrics
-  const sectorTrends = [
-    { name: 'Sector D (Trauma Center)', risk: 96, delta: '+14%', trend: 'up', severity: 'CRITICAL', floodRate: '+0.4m/hr' },
-    { name: 'Sector E (Blackout)', risk: 78, delta: '+8%', trend: 'up', severity: 'UNKNOWN', floodRate: '+0.2m/hr' },
-    { name: 'Sector C (River Corridor)', risk: 74, delta: '+12%', trend: 'up', severity: 'HIGH_RISK', floodRate: '+0.6m/hr' },
-    { name: 'Sector B (Commercial Core)', risk: 48, delta: '-4%', trend: 'down', severity: 'WARNING', floodRate: 'STABILIZED' },
-    { name: 'Sector A (Base Staging)', risk: 18, delta: '-6%', trend: 'down', severity: 'STABLE', floodRate: 'RECEDING' }
-  ];
+  const sectorTrends = (worldState?.zones && worldState.zones.length > 0 && activeMission && (activeMission.missionId !== '027' || activeMission.disasterType !== 'FLOOD'))
+    ? worldState.zones.map(z => ({
+        name: `Sector ${z.id} (${z.name || 'Zone'})`,
+        risk: z.risk || 50,
+        delta: (z.risk > 70 ? '+14%' : z.risk > 45 ? '+6%' : '-4%'),
+        trend: z.risk > 50 ? 'up' : 'down',
+        severity: z.status || (z.risk > 80 ? 'CRITICAL' : z.risk > 50 ? 'WARNING' : 'STABLE'),
+        hazardMetric: hazard.id === 'EARTHQUAKE' ? `${(z.pga || (z.risk * 0.007)).toFixed(2)}g PGA` :
+                      hazard.id === 'TORNADO' ? `${Math.round(120 + z.risk * 1.6)} km/h` :
+                      hazard.id === 'WILDFIRE' ? `${Math.round(15 + z.risk * 3.8)} MW/m²` :
+                      hazard.id === 'LANDSLIDE' ? `${Math.round(z.risk * 0.95)}% sat` :
+                      hazard.id === 'CYCLONE' ? `+${(1.1 + z.risk * 0.045).toFixed(1)}m surge` :
+                      `+${(0.2 + z.risk * 0.03).toFixed(1)}m/hr`
+      }))
+    : [
+        { name: 'Sector D (Trauma Center)', risk: 96, delta: '+14%', trend: 'up', severity: 'CRITICAL', hazardMetric: '+0.4m/hr' },
+        { name: 'Sector E (Blackout)', risk: 78, delta: '+8%', trend: 'up', severity: 'UNKNOWN', hazardMetric: '+0.2m/hr' },
+        { name: 'Sector C (River Corridor)', risk: 74, delta: '+12%', trend: 'up', severity: 'HIGH_RISK', hazardMetric: '+0.6m/hr' },
+        { name: 'Sector B (Commercial Core)', risk: 48, delta: '-4%', trend: 'down', severity: 'WARNING', hazardMetric: 'STABILIZED' },
+        { name: 'Sector A (Base Staging)', risk: 18, delta: '-6%', trend: 'down', severity: 'STABLE', hazardMetric: 'RECEDING' }
+      ];
+
+  const fleetRecommendation = useMemo(() => {
+    if (hazard.id === 'EARTHQUAKE') return "Keep Heavy Urban Search & Rescue (USAR) Squad in tactical reserve for secondary aftershock structural assessment in compromised sectors.";
+    if (hazard.id === 'TORNADO') return "Position debris removal and tactical shelter convoy along safe perimeter road outside primary convective vortex track.";
+    if (hazard.id === 'WILDFIRE') return "Maintain heavy water tankers and aerial fire suppression units in defensive containment array along urban interface boundary.";
+    if (hazard.id === 'LANDSLIDE') return "Stage heavy excavation plant and geological monitoring units on stable bedrock outside colluvial runout zone.";
+    if (hazard.id === 'CYCLONE') return "Hold amphibious rescue flotillas and high-axle extraction transports at high-ground staging facility until peak surge recedes.";
+    return "Keep 1 Swift Water Rescue Squad in tactical reserve for secondary flash flood cresting in River Basin Corridor.";
+  }, [hazard.id]);
 
   // Resource Utilization Breakdown
   const resourceAllocation = [
@@ -80,7 +106,7 @@ export default function AnalyticsScreen({
               OPERATIONAL ANALYTICS &amp; DISASTER TRENDS
             </h1>
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              THEATER #{activeMission?.missionId || '027'} · {activeMission?.locationDisplayName || 'CHANDIGARH REGION'}
+              THEATER #{activeMission?.missionId || '027'} · {activeMission?.locationDisplayName || activeMission?.locationName || 'REGIONAL EMERGENCY GRID'}
             </div>
           </div>
         </div>
@@ -98,7 +124,7 @@ export default function AnalyticsScreen({
             <AegisAnimatedNumber value={cityHealth} suffix="%" />
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            +18% projected recovery upon clearing Zone D
+            +18% projected recovery upon stabilizing critical sector
           </div>
         </div>
 
@@ -142,7 +168,7 @@ export default function AnalyticsScreen({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <TrendingUp size={16} color="var(--color-cyan)" />
               <h3 className="font-hud" style={{ fontSize: '15px', fontWeight: '700', color: '#FFFFFF', margin: 0 }}>
-                SECTOR RISK TRAJECTORY &amp; RATE OF INUNDATION
+                SECTOR RISK TRAJECTORY &amp; {hazard.primaryMetricLabel}
               </h3>
             </div>
             <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
@@ -156,7 +182,7 @@ export default function AnalyticsScreen({
                 <th>SECTOR</th>
                 <th>CURRENT RISK</th>
                 <th>TREND</th>
-                <th>FLOOD RATE</th>
+                <th>{hazard.primaryMetricLabel}</th>
                 <th>STATUS</th>
               </tr>
             </thead>
@@ -171,7 +197,7 @@ export default function AnalyticsScreen({
                     {st.trend === 'up' ? <ArrowUpRight size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> : <ArrowDownRight size={13} style={{ display: 'inline', verticalAlign: 'middle' }} />}
                     {st.delta}
                   </td>
-                  <td className="font-mono" style={{ color: 'var(--text-secondary)' }}>{st.floodRate}</td>
+                  <td className="font-mono" style={{ color: 'var(--text-secondary)' }}>{st.hazardMetric}</td>
                   <td>
                     <span className={`aegis-badge ${st.severity === 'CRITICAL' ? 'badge-critical' : st.severity === 'WARNING' || st.severity === 'HIGH_RISK' ? 'badge-warning' : 'badge-normal'}`}>
                       {st.severity}
@@ -217,7 +243,7 @@ export default function AnalyticsScreen({
             lineHeight: 1.4,
             color: 'var(--text-secondary)'
           }}>
-            <strong>Fleet Readiness Recommendation:</strong> Keep 1 Swift Water Rescue Squad in tactical reserve for secondary flash flood cresting in River Basin Corridor.
+            <strong>Fleet Readiness Recommendation:</strong> {fleetRecommendation}
           </div>
         </div>
 

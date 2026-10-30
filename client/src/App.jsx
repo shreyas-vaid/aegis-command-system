@@ -215,7 +215,9 @@ export default function App() {
     setActiveMissionId(mId);
     setActiveMission(mission);
     setActiveView('MISSION');
-    setCurrentStage('briefing');
+    if (activeView === 'DECK') {
+      setCurrentStage('briefing');
+    }
     fetchWorldState(true, mId);
     showToast(`> THEATER ENGAGED // OPERATION #${mId}: ${mission.name}`, "success");
   };
@@ -342,6 +344,11 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         alertCount={worldState?.activeAlerts || 7}
         criticalIncidentsCount={2}
+        activeMissionId={activeMissionId}
+        activeMission={activeMission}
+        missionsList={missionsList}
+        onSelectMission={handleSelectOperation}
+        onOpenNewOperation={() => setIsNewOpModalOpen(true)}
       />
 
       {/* Main Viewport Container */}
@@ -607,7 +614,7 @@ export default function App() {
                       onReplay={() => {
                         setActivePage('mission-control');
                         handleStageSelect('briefing');
-                        showToast("> OPERATION #027 REINITIALIZING TO BASELINE BRIEFING", "info");
+                        showToast(`> OPERATION #${activeMission?.missionId || '027'} REINITIALIZING TO BASELINE BRIEFING`, "info");
                       }}
                       onTryDifferentStrategy={() => {
                         handleStageSelect('strategy');
@@ -621,6 +628,7 @@ export default function App() {
                     />
                   ) : (
                     <DisasterSimulationScreen
+                      activeMission={activeMission}
                       onProceedToChess={() => {
                         handleStageSelect('chess');
                         showToast("> PROJECTION VERIFIED // DISASTER CHESS TACTICAL BOARD ACTIVE", "info");
@@ -634,6 +642,7 @@ export default function App() {
               {activePage === 'recommendations' && (
                 <AegisCinematicTransition stage="explain">
                   <ExplainableAIScreen
+                    activeMission={activeMission}
                     explanation={activeExplanation}
                     zoneId={activeZoneId}
                     onEnterCommandCenter={() => {

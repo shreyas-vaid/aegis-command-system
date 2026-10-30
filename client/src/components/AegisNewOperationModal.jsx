@@ -21,12 +21,12 @@ import { createMission, searchLocations } from '../services/api';
 
 const DISASTER_TYPES = [
   { value: 'FLOOD', label: 'Flood / Flash Flooding', icon: Waves },
-  { value: 'FIRE', label: 'Urban / Wildfire Outbreak', icon: Flame },
-  { value: 'EARTHQUAKE', label: 'Seismic Shock / Collapse', icon: Activity },
-  { value: 'STORM', label: 'Severe Cyclone / Storm Surge', icon: Compass },
+  { value: 'EARTHQUAKE', label: 'Seismic Shock / Structural Collapse', icon: Activity },
+  { value: 'TORNADO', label: 'Tornado / Vortex Corridor', icon: Compass },
+  { value: 'WILDFIRE', label: 'Wildfire / Firestorm Front', icon: Flame },
+  { value: 'LANDSLIDE', label: 'Landslide / Geotechnical Slide', icon: Layers },
+  { value: 'CYCLONE', label: 'Cyclone / Hurricane Storm Surge', icon: Compass },
   { value: 'INDUSTRIAL', label: 'Industrial Chemical Breach', icon: ShieldAlert },
-  { value: 'LANDSLIDE', label: 'Mudslide / Geologic Slide', icon: Layers },
-  { value: 'HEATWAVE', label: 'Critical Atmospheric Heatwave', icon: Activity },
   { value: 'OTHER', label: 'Compound Emergency Scenario', icon: ShieldAlert }
 ];
 

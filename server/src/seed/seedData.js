@@ -29,6 +29,70 @@ export const DEMO_MISSION = {
   status: "ACTIVE"
 };
 
+export const DEMO_MISSIONS = [
+  DEMO_MISSION,
+  {
+    missionId: "104",
+    name: "Ridge Fault Seismic Rupture",
+    description: "Mw 6.8 rupture along North Ridge Fault. Extensive unreinforced masonry collapse; county trauma hospital isolated.",
+    disasterType: "EARTHQUAKE",
+    locationName: "Los Angeles Basin",
+    locationDisplayName: "San Fernando Foothills, CA",
+    latitude: 34.2805,
+    longitude: -118.4390,
+    severity: "CRITICAL",
+    status: "ACTIVE"
+  },
+  {
+    missionId: "209",
+    name: "Supercell Vortex Corridor",
+    description: "EF-4 wedge tornado tracking northeast at 48 km/h. Multiple residential subdivisions in direct ground swath path.",
+    disasterType: "TORNADO",
+    locationName: "Oklahoma Plains",
+    locationDisplayName: "Moore - South OKC Corridor, OK",
+    latitude: 35.3395,
+    longitude: -97.4867,
+    severity: "CRITICAL",
+    status: "ACTIVE"
+  },
+  {
+    missionId: "315",
+    name: "Canyon Firestorm Front",
+    description: "Wind-driven crown fire advancing at 4.2 km/h across chaparral slopes. Mandatory evacuation ordered for western urban edge.",
+    disasterType: "WILDFIRE",
+    locationName: "North Coast Ridge",
+    locationDisplayName: "Sonoma - Napa Valley Slopes, CA",
+    latitude: 38.5025,
+    longitude: -122.5833,
+    severity: "CRITICAL",
+    status: "ACTIVE"
+  },
+  {
+    missionId: "418",
+    name: "Escarpment Debris Flow",
+    description: "Saturated colluvial failure following 160mm torrential rain. 85,000m³ debris damming mountain transit highway.",
+    disasterType: "LANDSLIDE",
+    locationName: "Cascade Range Pass",
+    locationDisplayName: "Oso - River Valley Pass, WA",
+    latitude: 48.2758,
+    longitude: -121.9211,
+    severity: "HIGH",
+    status: "ACTIVE"
+  },
+  {
+    missionId: "522",
+    name: "Coastal Surge & Gale Array",
+    description: "Category 4 cyclone eyewall landfall. 5.6m storm surge overtopping municipal seawalls and low-lying barrier ports.",
+    disasterType: "CYCLONE",
+    locationName: "Biscayne Coastal Basin",
+    locationDisplayName: "Biscayne Bay & Harbor Ports, FL",
+    latitude: 25.7617,
+    longitude: -80.1918,
+    severity: "CRITICAL",
+    status: "ACTIVE"
+  }
+];
+
 export const DEMO_ZONES = [
   {
     zoneId: "A",

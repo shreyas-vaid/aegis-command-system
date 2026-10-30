@@ -16,6 +16,8 @@ import { INITIAL_WEATHER, INITIAL_ZONES } from '../seed/seedData.js';
 import Simulation from '../models/Simulation.js';
 import { isDBConnected } from '../config/db.js';
 
+import { findMissionById } from './missionController.js';
+
 let simulationCounter = 0;
 const simulationStore = [];
 
@@ -24,12 +26,16 @@ export async function runSimulation(req, res) {
   const state = getWorldState();
   const {
     missionId = "027",
+    disasterType: customDisasterType,
     timeOffset: reqOffset,
     minutes,
     actions = [],
     applyCustomPlan = false,
     plan = null
   } = req.body || {};
+
+  const targetMission = await findMissionById(missionId).catch(() => null);
+  const disasterType = customDisasterType || targetMission?.disasterType || "FLOOD";
 
   const timeOffset = parseInt(reqOffset !== undefined ? reqOffset : (minutes !== undefined ? minutes : 30), 10);
 
@@ -48,7 +54,7 @@ export async function runSimulation(req, res) {
     state.zones = JSON.parse(JSON.stringify(INITIAL_ZONES));
     state.time = "14:37:21";
   } else {
-    const projected = projectTimeOffset(INITIAL_ZONES, INITIAL_WEATHER, timeOffset);
+    const projected = projectTimeOffset(INITIAL_ZONES, INITIAL_WEATHER, timeOffset, disasterType);
     state.zones = projected.zones;
     state.weather = projected.weather;
 
@@ -59,7 +65,7 @@ export async function runSimulation(req, res) {
   const calculatedZones = computeLiveZonesState(state.zones, state.weather, state.resources);
   const cityHealth = calculateCityHealth(calculatedZones, state.resources, timeOffset);
   const hospitalLoad = calculateHospitalLoad(state.resources, timeOffset);
-  const butterflyChain = generateButterflyChain(timeOffset);
+  const butterflyChain = generateButterflyChain(timeOffset, disasterType);
 
   // Store simulation result
   simulationCounter++;

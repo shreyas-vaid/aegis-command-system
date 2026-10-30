@@ -557,6 +557,16 @@ export default function LiveOperationsScreen({
       mapInstanceRef.current = null;
       setIsMapReady(false);
     };
+  }, []);
+
+  // 1b. Smoothly flyTo / re-center map when active theater coordinates change
+  useEffect(() => {
+    if (mapInstanceRef.current && centerLat && centerLng) {
+      mapInstanceRef.current.flyTo([centerLat, centerLng], 13, {
+        duration: 1.2,
+        easeLinearity: 0.25
+      });
+    }
   }, [centerLat, centerLng]);
 
   // 2. Basemap tile swapping with loading and error tracking
