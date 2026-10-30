@@ -23,6 +23,7 @@ import {
   resetState, 
   getHealth, 
   getMissions, 
+  getMission,
   getZones, 
   getIncidents, 
   getResources,
@@ -385,6 +386,11 @@ export default function App() {
         currentUser={currentUser}
         currentOrg={currentOrg}
         activeMission={activeMission}
+        missionsList={missionsList}
+        onSelectMission={(mId) => {
+          const m = missionsList.find(x => (x.missionId || x.id || x._id) === mId);
+          if (m) handleSelectOperation(m);
+        }}
         activeView={activeView}
         onNavigateToDeck={() => setActiveView(activeView === 'DECK' ? 'MISSION' : 'DECK')}
         onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -496,15 +502,25 @@ export default function App() {
               currentUser={currentUser}
               currentOrg={currentOrg}
               activeMission={activeMission}
+              worldState={worldState}
+              zones={worldState?.zones || []}
+              incidents={worldState?.incidents || []}
+              resources={worldState?.resources || []}
+              onNavigateStage={handleStageSelect}
+              onSelectZone={(zoneId, exp) => {
+                if (zoneId) setActiveZoneId(zoneId);
+                if (exp) setActiveExplanation(exp);
+                handleStageSelect('explain');
+              }}
               onResourceAssigned={(unit, targetZone) => {
                 showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
               }}
               onCreatePlan={() => {
                 handleStageSelect('strategy');
-              showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");
-            }}
-          />
-        )}
+                showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");
+              }}
+            />
+          )}
 
         {/* STAGE 8: HUMAN VS AI COMMAND STRATEGY */}
         {currentStage === 'strategy' && (
