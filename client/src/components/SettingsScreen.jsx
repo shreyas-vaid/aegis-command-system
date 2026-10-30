@@ -11,7 +11,8 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   RefreshCw,
-  LogOut
+  LogOut,
+  Terminal
 } from 'lucide-react';
 
 export default function SettingsScreen({
@@ -22,6 +23,7 @@ export default function SettingsScreen({
   onReset = null,
   onOpenAuth = null,
   onLogout = null,
+  onReplayBoot = null,
   showToast = () => {}
 }) {
   const [tacticalSound, setTacticalSound] = useState(true);
@@ -201,16 +203,29 @@ export default function SettingsScreen({
                 Reverts all dispatch actions and resets city health to 70%
               </div>
             </div>
-            {onReset && (
-              <button
-                onClick={onReset}
-                className="aegis-btn aegis-btn-critical"
-                style={{ fontSize: '11px' }}
-              >
-                <RotateCcw size={12} />
-                <span>RESET STATE</span>
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {onReplayBoot && (
+                <button
+                  onClick={onReplayBoot}
+                  className="aegis-btn aegis-btn-secondary"
+                  style={{ fontSize: '11px' }}
+                  title="Replay cinematic system initialization sequence"
+                >
+                  <Terminal size={12} />
+                  <span>REPLAY BOOT</span>
+                </button>
+              )}
+              {onReset && (
+                <button
+                  onClick={onReset}
+                  className="aegis-btn aegis-btn-critical"
+                  style={{ fontSize: '11px' }}
+                >
+                  <RotateCcw size={12} />
+                  <span>RESET STATE</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Backend Status */}

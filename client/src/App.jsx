@@ -21,6 +21,7 @@ import AegisSidebar from './components/AegisSidebar';
 import LiveOperationsScreen from './components/LiveOperationsScreen';
 import AnalyticsScreen from './components/AnalyticsScreen';
 import SettingsScreen from './components/SettingsScreen';
+import AegisBootScreen from './components/AegisBootScreen';
 import { 
   getState, 
   resetState, 
@@ -62,7 +63,14 @@ export default function App() {
   const [missionsList, setMissionsList] = useState([]);
   const [isNewOpModalOpen, setIsNewOpModalOpen] = useState(false);
   
-  // Tactical State across mission
+  // Cinematic System Initialization Boot Sequence
+  const [isBootCompleted, setIsBootCompleted] = useState(() => {
+    try {
+      return sessionStorage.getItem('aegis_boot_completed') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [activeStrategy, setActiveStrategy] = useState('ai');
   const [activeExplanation, setActiveExplanation] = useState(null);
   const [activeZoneId, setActiveZoneId] = useState('D');
@@ -290,6 +298,16 @@ export default function App() {
 
   return (
     <div className="aegis-app-shell">
+
+      {/* Cinematic Cyber Terminal System Initialization Boot Sequence */}
+      {!isBootCompleted && (
+        <AegisBootScreen
+          isOffline={isOffline}
+          currentUser={currentUser}
+          onComplete={() => setIsBootCompleted(true)}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+        />
+      )}
       
       {/* Tactical Custom Pointer Cursor */}
       <AegisCursor />
@@ -645,6 +663,13 @@ export default function App() {
                   onReset={handleReset}
                   onOpenAuth={() => setIsAuthModalOpen(true)}
                   onLogout={handleLogout}
+                  onReplayBoot={() => {
+                    try {
+                      sessionStorage.removeItem('aegis_boot_completed');
+                    } catch {}
+                    setIsBootCompleted(false);
+                    showToast("> SYSTEM REINITIALIZING // TACTICAL BOOT SEQUENCE ACTIVE", "info");
+                  }}
                   showToast={showToast}
                 />
               )}
