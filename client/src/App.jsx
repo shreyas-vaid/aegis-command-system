@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import MissionNavBar from './components/MissionNavBar';
 import MissionBriefingScreen from './components/MissionBriefingScreen';
 import IncidentInvestigationScreen from './components/IncidentInvestigationScreen';
 import IncidentFusionScreen from './components/IncidentFusionScreen';
@@ -404,39 +403,6 @@ export default function App() {
             </div>
           )}
         </div>
-
-        {/* Persistent Mission Progress Ribbon Header */}
-        <MissionNavBar
-          currentStage={currentStage}
-          onSelectStage={(stageId) => {
-            handleStageSelect(stageId);
-            if (stageId === 'command') setActivePage('overview');
-            else if (stageId === 'briefing') setActivePage('mission-control');
-            else if (stageId === 'investigate' || stageId === 'fuse') setActivePage('incidents');
-            else if (stageId === 'strategy' || stageId === 'simulate' || stageId === 'chess' || stageId === 'deploy' || stageId === 'outcome') setActivePage('simulations');
-            else if (stageId === 'explain' || stageId === 'unknown') setActivePage('recommendations');
-            else if (stageId === 'map') setActivePage('live-ops');
-          }}
-          onReset={handleReset}
-          onBack={handleBack}
-          cityHealth={currentStage === 'outcome' ? 78 : currentStage === 'simulate' ? 61 : (worldState?.cityHealth || 70)}
-          activeAlerts={currentStage === 'outcome' ? 2 : (worldState?.activeAlerts || 7)}
-          hospitalLoad={currentStage === 'outcome' ? 64 : currentStage === 'simulate' ? 91 : (worldState?.hospitalLoad || 72)}
-          mode={mode}
-          onToggleMode={handleToggleMode}
-          currentUser={currentUser}
-          currentOrg={currentOrg}
-          activeMission={activeMission}
-          missionsList={missionsList}
-          onSelectMission={(mId) => {
-            const m = missionsList.find(x => (x.missionId || x.id || x._id) === mId);
-            if (m) handleSelectOperation(m);
-          }}
-          activeView={activeView}
-          onNavigateToDeck={() => setActiveView(activeView === 'DECK' ? 'MISSION' : 'DECK')}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
-          onOpenProfile={() => setIsProfileDrawerOpen(true)}
-        />
 
         {/* Dedicated Interactive Screen Content Area */}
         <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10 }}>
