@@ -3,6 +3,7 @@
   "version": "2.5.0",
   "description": "AEGIS — AI Emergency Governance & Intelligence System",
   "scripts": {
+    "start": "npm --prefix server start",
     "server": "npm --prefix server run dev",
     "client": "npm --prefix client run dev",
     "dev": "npm run server & npm run client",

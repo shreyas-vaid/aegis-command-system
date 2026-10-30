@@ -1,17 +1,25 @@
 {
   "name": "aegis-server",
-  "version": "2.5.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "seed": "node src/seed/seedData.js"
+    "dev": "nodemon src/server.js",
+    "seed": "node src/seed/seedData.js",
+    "test:phase-e": "node test_phase_e_complete.js",
+    "test:phase-f": "node test_phase_f_complete.js",
+    "test:phase-g": "node test_phase_g_complete.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^18.0.5",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   }
 }

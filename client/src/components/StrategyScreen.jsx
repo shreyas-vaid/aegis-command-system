@@ -1,16 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Sparkles, Play, ShieldAlert, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard, AegisAnimatedNumber } from './aegis-interactive';
+import { getRecommendations } from '../services/api';
 
 export default function StrategyScreen({
   onRunHumanPlan,
   onRunAiPlan
 }) {
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
+  const [isSyncingRecs, setIsSyncingRecs] = useState(false);
 
-  const handlePlanSelect = (type, runner) => {
+  useEffect(() => {
+    let isMounted = true;
+    setIsSyncingRecs(true);
+    getRecommendations({ missionId: '027', zoneId: 'D' })
+      .then(res => {
+        if (isMounted && res?.recommendations) {
+          setRecommendations(res.recommendations);
+        }
+      })
+      .catch(err => {
+        console.warn('[AEGIS-API] Recommendations fallback:', err.message);
+      })
+      .finally(() => {
+        if (isMounted) setIsSyncingRecs(false);
+      });
+
+    return () => { isMounted = false; };
+  }, []);
+
+  const handlePlanSelect = async (type, runner) => {
     setSelectedPlan(type);
+    if (type === 'ai') {
+      try {
+        setIsSyncingRecs(true);
+        const res = await getRecommendations({ missionId: '027', zoneId: 'D' }).catch(() => null);
+        if (res?.recommendations) {
+          setRecommendations(res.recommendations);
+        }
+      } finally {
+        setIsSyncingRecs(false);
+      }
+    }
     setTimeout(() => {
       runner();
     }, 450);
@@ -151,18 +184,28 @@ export default function StrategyScreen({
 
               {/* Recommended Steps */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
-                  <strong>1. </strong> Deploy Recon Drone to Zone E delta blackout.
-                </div>
-                <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
-                  <strong>2. </strong> Reroute ambulances via secondary Road 12 connector.
-                </div>
-                <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
-                  <strong>3. </strong> Deploy Mobile Medical Unit directly on-site to Zone D.
-                </div>
-                <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
-                  <strong>4. </strong> Restore communications with tactical satellite link.
-                </div>
+                {recommendations && recommendations.length > 0 ? (
+                  recommendations.map((rec, idx) => (
+                    <div key={idx} style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
+                      <strong>{idx + 1}. </strong> {rec.action} {rec.reason ? <span style={{ color: '#9fb5a4', fontSize: '11px' }}>({rec.reason})</span> : null}
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
+                      <strong>1. </strong> Deploy Recon Drone to Zone E delta blackout.
+                    </div>
+                    <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
+                      <strong>2. </strong> Reroute ambulances via secondary Road 12 connector.
+                    </div>
+                    <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
+                      <strong>3. </strong> Deploy Mobile Medical Unit directly on-site to Zone D.
+                    </div>
+                    <div style={{ background: 'rgba(25, 58, 42, 0.35)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: '#eae5d8', borderLeft: '3px solid #6f947d' }}>
+                      <strong>4. </strong> Restore communications with tactical satellite link.
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* WHY Reasoning */}

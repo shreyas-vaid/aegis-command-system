@@ -9,14 +9,64 @@
  * ────────────────────────────────────────────────────────────────────
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// Configurable API base URL supporting VITE_API_URL
+// Examples:
+// Development: VITE_API_URL=http://localhost:5000/api
+// Production:  VITE_API_URL=https://YOUR-RENDER-API-URL/api
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+if (!import.meta.env.DEV && !rawApiUrl) {
+  console.warn('[AEGIS-API] VITE_API_URL is not configured in production. Set VITE_API_URL in Vercel Project Settings to your deployed Render URL.');
+}
+const normalizedBase = rawApiUrl
+  ? (rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl)
+  : (import.meta.env.DEV ? 'http://localhost:5000' : '');
+
+// Token storage key
+const TOKEN_KEY = 'aegis_auth_token';
+
+export function getAuthToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token) {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  } catch (err) {
+    console.warn('[AEGIS-AUTH] Storage error:', err);
+  }
+}
+
+export function clearAuthToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch (err) {
+    console.warn('[AEGIS-AUTH] Storage clear error:', err);
+  }
+}
 
 async function request(path, options = {}) {
-  const url = `${API_BASE}${path}`;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${normalizedBase}${normalizedPath}`;
+  const token = getAuthToken();
+
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(options.headers || {})
+    };
+
     const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options
+      ...options,
+      headers
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -27,6 +77,60 @@ async function request(path, options = {}) {
     console.warn(`[AEGIS-API] Request failed: ${path}`, err.message);
     throw err;
   }
+}
+
+// ─── AUTHENTICATION ──────────────────────────────────────────────────
+export function registerUser(userData) {
+  return request('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  });
+}
+
+export function loginUser(credentials) {
+  return request('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials)
+  });
+}
+
+export function logoutUser() {
+  return request('/api/auth/logout', {
+    method: 'POST'
+  }).finally(() => {
+    clearAuthToken();
+  });
+}
+
+export function getMe() {
+  return request('/api/auth/me');
+}
+
+export function getUsersMe() {
+  return request('/api/users/me');
+}
+
+// ─── ORGANIZATIONS ───────────────────────────────────────────────────
+export function getOrganization(id) {
+  return request(`/api/organizations/${id}`);
+}
+
+export function createOrganization(data) {
+  return request('/api/organizations', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function updateOrganization(id, data) {
+  return request(`/api/organizations/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export function getOrganizationUsers(id) {
+  return request(`/api/organizations/${id}/users`);
 }
 
 // ─── HEALTH ──────────────────────────────────────────────────────────
@@ -57,6 +161,55 @@ export function updateMission(id, data) {
   });
 }
 
+export function archiveMission(id) {
+  return request(`/api/missions/${id}`, {
+    method: 'DELETE'
+  });
+}
+
+// ─── LOCATION INTELLIGENCE ───────────────────────────────────────────
+export function searchLocations(query) {
+  if (!query || typeof query !== 'string' || query.trim().length < 3) {
+    return Promise.resolve([]);
+  }
+  return request(`/api/locations/search?q=${encodeURIComponent(query.trim())}`);
+}
+
+// ─── WEATHER INTELLIGENCE ─────────────────────────────────────────────
+export function getMissionWeather(missionId, forceRefresh = false) {
+  const query = forceRefresh ? '?refresh=true' : '';
+  return request(`/api/missions/${missionId}/data/weather${query}`);
+}
+
+// ─── FIELD REPORTS INTELLIGENCE ──────────────────────────────────────
+export function getMissionReports(missionId) {
+  return request(`/api/missions/${missionId}/reports`);
+}
+
+export function createMissionReport(missionId, data) {
+  return request(`/api/missions/${missionId}/reports`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function getMissionReport(missionId, reportId) {
+  return request(`/api/missions/${missionId}/reports/${reportId}`);
+}
+
+export function updateMissionReport(missionId, reportId, data) {
+  return request(`/api/missions/${missionId}/reports/${reportId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+// ─── DATA FUSION INTELLIGENCE ────────────────────────────────────────
+export function getMissionIntelligence(missionId, forceRefresh = false) {
+  const query = forceRefresh ? '?refresh=true' : '';
+  return request(`/api/missions/${missionId}/intelligence${query}`);
+}
+
 // ─── STATE (Legacy) ──────────────────────────────────────────────────
 export function getState() {
   return request('/api/state');
@@ -67,9 +220,8 @@ export function resetState() {
 }
 
 // ─── ZONES ───────────────────────────────────────────────────────────
-export function getZones(missionId) {
-  if (missionId) return request(`/api/missions/${missionId}/zones`);
-  return request('/api/zones');
+export function getZones(missionId = '027') {
+  return request(`/api/missions/${missionId || '027'}/zones`);
 }
 
 export function getZone(id) {
@@ -81,9 +233,8 @@ export function getZoneExplanation(id) {
 }
 
 // ─── INCIDENTS ───────────────────────────────────────────────────────
-export function getIncidents(missionId) {
-  if (missionId) return request(`/api/missions/${missionId}/incidents`);
-  return request('/api/incidents');
+export function getIncidents(missionId = '027') {
+  return request(`/api/missions/${missionId || '027'}/incidents`);
 }
 
 export function createIncident(data) {
@@ -101,13 +252,12 @@ export function updateIncident(id, data) {
 }
 
 // ─── RESOURCES ───────────────────────────────────────────────────────
-export function getResources(missionId) {
-  if (missionId) return request(`/api/missions/${missionId}/resources`);
-  return request('/api/resources');
+export function getResources(missionId = '027') {
+  return request(`/api/missions/${missionId || '027'}/resources`);
 }
 
-export function assignResource(resourceType, zoneId) {
-  return request(`/api/resources/${resourceType}/assign`, {
+export function assignResource(resourceId, zoneId) {
+  return request(`/api/resources/${resourceId}/assign`, {
     method: 'POST',
     body: JSON.stringify({ zoneId })
   });

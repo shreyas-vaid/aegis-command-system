@@ -1,12 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 /**
  * AegisFeatureModule
  * 
  * Reusable interactive feature module conforming to Section 4 & 5:
- * - Clickable module card
- * - Hover physics with 3D tilt and specular sheen
  * - Visual hierarchy with active / dimmed states
+ * - Stable planar layout (cursor tilt removed)
  */
 export default function AegisFeatureModule({
   icon = "✦",
@@ -22,10 +21,7 @@ export default function AegisFeatureModule({
   disabled = false,
   style = {}
 }) {
-  const moduleRef = useRef(null);
-  const [coords, setCoords] = useState({ x: 50, y: 50 });
   const [isPressed, setIsPressed] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   const getVariant = () => {
     switch (variant) {
@@ -59,24 +55,7 @@ export default function AegisFeatureModule({
 
   const scheme = getVariant();
 
-  const handleMouseMove = (e) => {
-    if (disabled || !moduleRef.current) return;
-    const rect = moduleRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
 
-    setCoords({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
-    const rotateY = ((x - centerX) / centerX) * 4;
-    const rotateX = -((y - centerY) / centerY) * 4;
-    setTilt({ x: rotateX, y: rotateY });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-    setIsPressed(false);
-  };
 
   const handleClick = (e) => {
     if (disabled) return;
@@ -87,10 +66,7 @@ export default function AegisFeatureModule({
 
   return (
     <div
-      ref={moduleRef}
       onClick={handleClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       style={{
         position: 'relative',
         display: 'flex',
@@ -110,7 +86,7 @@ export default function AegisFeatureModule({
         cursor: disabled ? 'not-allowed' : 'pointer',
         transform: isPressed 
           ? 'scale(0.97)' 
-          : `perspective(1000px) rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg) translateZ(${active ? '12px' : '0px'})`,
+          : (active ? 'scale(1.01)' : 'none'),
         transition: 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease',
         userSelect: 'none',
         backdropFilter: 'blur(20px)',
@@ -126,7 +102,7 @@ export default function AegisFeatureModule({
           inset: 0,
           pointerEvents: 'none',
           borderRadius: 'inherit',
-          background: `radial-gradient(circle 200px at ${coords.x}% ${coords.y}%, rgba(214, 195, 154, 0.12), transparent 75%)`
+          background: 'radial-gradient(circle 200px at 50% 50%, rgba(214, 195, 154, 0.12), transparent 75%)'
         }} 
       />
 

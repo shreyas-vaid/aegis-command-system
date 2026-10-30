@@ -1,16 +1,41 @@
-# React + Vite
+# AEGIS Client — Frontend Command Center
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite frontend for the AEGIS (AI Emergency Governance & Intelligence System) Tactical Operations Platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Environment Configuration
 
-## React Compiler
+### Local Development
+In local development, the frontend automatically proxies API requests to `http://localhost:5000` or uses `http://localhost:5000/api` as fallback.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+To explicitly set a custom API target, create a `.env` file in `/client`:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 🌐 Production Vercel Deployment
+
+When deploying the AEGIS frontend on **Vercel**:
+
+### 1. Environment Variable
+Add the following Environment Variable in your Vercel Project Settings (**Settings → Environment Variables**):
+
+| Key | Example Value | Description |
+|-----|---------------|-------------|
+| `VITE_API_URL` | `https://YOUR-RENDER-API-URL/api` | The public base URL of your deployed Render backend API |
+
+### 2. ⚠️ Security Notice — No Secrets in Frontend
+- All variables starting with `VITE_` are embedded directly into the client-side JavaScript bundle during the build step and are **publicly readable in the browser**.
+- **DO NOT** put any secrets, database credentials (such as `MONGODB_URI`), or private API keys in the frontend `.env` or Vercel frontend environment variables.
+- All database connections and private secrets must remain exclusively on the backend (e.g. Render environment variables).
+
+---
+
+## 🛠️ Scripts
+
+- `npm run dev` — Start Vite development server on port 5173
+- `npm run build` — Build production bundle to `/dist`
+- `npm run preview` — Preview the production build locally

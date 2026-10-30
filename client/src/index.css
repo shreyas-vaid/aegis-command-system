@@ -1,46 +1,68 @@
 :root {
-  /* AEGIS Premium Operational Palette */
-  --bg-primary: #07100C;
-  --bg-deep-green: #0D1B14;
-  --bg-forest-deep: #14291E;
-  --bg-surface: #0A140F;
-  --bg-panel: rgba(13, 27, 20, 0.72);
-  --bg-panel-solid: #0D1B14;
-  --bg-panel-hover: rgba(49, 92, 67, 0.28);
-  
-  --color-forest: #315C43;
-  --color-forest-light: #496D58;
-  --color-sage: #5F806B;
-  --color-sage-light: #8FA995;
-  --color-beige: #D6C39A;
-  --color-beige-light: #E7D9B8;
-  --color-off-white: #F1EBDD;
-  --color-charcoal: #07100C;
-  --color-critical: #D9534F;
-  --color-critical-muted: #C2413E;
-  --color-critical-bg: rgba(217, 83, 79, 0.14);
+  /* AEGIS COMMAND Tactical Design System Tokens */
+  --bg-primary: #070B12;
+  --bg-deep-navy: #090E17;
+  --bg-surface: #0E1524;
+  --bg-surface-elevated: #151F33;
+  --bg-surface-hover: #1C2A44;
+  --bg-panel: rgba(14, 21, 36, 0.94);
+  --bg-panel-solid: #0E1524;
+  --bg-panel-hover: rgba(21, 31, 51, 0.8);
 
-  /* Translucent borders and glass highlights */
-  --border-subtle: rgba(214, 195, 154, 0.12);
-  --border-medium: rgba(214, 195, 154, 0.24);
-  --border-accent: rgba(95, 128, 107, 0.45);
-  --border-beige-active: rgba(214, 195, 154, 0.65);
-  --border-glass: rgba(241, 235, 221, 0.16);
-  
-  --color-stable: #5F806B;
-  --color-stable-bg: rgba(95, 128, 107, 0.16);
-  --color-warning: #D6C39A;
-  --color-warning-bg: rgba(214, 195, 154, 0.16);
-  --color-orange: #D6C39A;
-  --color-orange-bg: rgba(214, 195, 154, 0.16);
-  --color-unknown: #8B72A8;
-  --color-unknown-bg: rgba(139, 114, 168, 0.16);
-  --color-cyan: #5F806B;
-  --color-cyan-bg: rgba(95, 128, 107, 0.14);
+  /* Primary Accent: Electric Cyan */
+  --color-accent: #00F0FF;
+  --color-accent-light: #38BDF8;
+  --color-accent-subtle: rgba(0, 240, 255, 0.12);
+  --color-accent-border: rgba(0, 240, 255, 0.35);
+  --color-cyan: #00F0FF;
+  --color-cyan-dim: #0284C7;
+  --color-cyan-glow: rgba(0, 240, 255, 0.25);
 
-  --font-hud: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Secondary Accent: Tactical Muted Sand */
+  --color-sand: #C8B99D;
+  --color-sand-light: #DDD2BF;
+  --color-sand-subtle: rgba(200, 185, 157, 0.12);
+  --border-sand: rgba(200, 185, 157, 0.3);
+
+  /* Text Hierarchy */
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --color-off-white: #F1F5F9;
+  --color-charcoal: #070B12;
+
+  /* Semantic Alert & Operational Status Colors */
+  --color-critical: #EF4444;
+  --color-critical-muted: #DC2626;
+  --color-critical-bg: rgba(239, 68, 68, 0.14);
+  --color-critical-border: rgba(239, 68, 68, 0.4);
+
+  --color-warning: #F59E0B;
+  --color-warning-muted: #D97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-warning-border: rgba(245, 158, 11, 0.4);
+
+  --color-normal: #10B981;
+  --color-normal-bg: rgba(16, 185, 129, 0.14);
+  --color-normal-border: rgba(16, 185, 129, 0.4);
+  --color-stable: #10B981;
+  --color-stable-bg: rgba(16, 185, 129, 0.14);
+
+  --color-inactive: #64748B;
+  --color-inactive-bg: rgba(100, 116, 139, 0.14);
+  --color-inactive-border: rgba(100, 116, 139, 0.3);
+  --color-unknown: #8B7FA8;
+  --color-unknown-bg: rgba(139, 127, 168, 0.14);
+
+  /* Subtle Tactical Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.14);
+  --border-accent: rgba(0, 240, 255, 0.35);
+
+  /* Typography */
+  --font-hud: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * {
@@ -51,34 +73,35 @@
 
 body {
   background-color: var(--bg-primary);
-  color: var(--color-off-white);
+  color: var(--text-primary);
   font-family: var(--font-body);
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(111, 148, 125, 0.08) 0%, transparent 65%),
-    radial-gradient(circle at 100% 100%, rgba(214, 198, 165, 0.04) 0%, transparent 50%),
-    linear-gradient(rgba(214, 198, 165, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(214, 198, 165, 0.018) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+    radial-gradient(circle at 50% 0%, rgba(46, 125, 90, 0.06) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(200, 185, 157, 0.03) 0%, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
   min-height: 100vh;
   overflow-x: hidden;
   font-size: 14px;
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(8, 13, 10, 0.85);
+  background: var(--bg-deep-graphite);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(111, 148, 125, 0.28);
+  background: rgba(122, 130, 142, 0.35);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(214, 198, 165, 0.45);
+  background: rgba(200, 185, 157, 0.45);
 }
 
 /* Layout utilities */
@@ -98,21 +121,26 @@ body {
 
 .font-mono {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Restrained Glassmorphism panels */
-.hud-panel, .glass-panel {
-  background: var(--bg-panel);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Restrained, crisp tactical panels */
+.hud-panel, .glass-panel, .aegis-card {
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   position: relative;
-  box-shadow: 
-    0 20px 45px rgba(0, 0, 0, 0.65), 
-    inset 0 1px 1px rgba(234, 229, 216, 0.12),
-    inset 0 0 16px rgba(111, 148, 125, 0.03);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hud-panel:hover, .aegis-card:hover {
+  border-color: var(--border-medium);
 }
 
 .hud-panel-bordered {
@@ -148,17 +176,14 @@ body {
   z-index: 2;
 }
 
-/* Interactive 3D Object Cards & Specular Sheen */
+/* Interactive Object Cards & Specular Sheen */
 .aegis-3d-card-wrap {
-  perspective: 1200px;
-  transform-style: preserve-3d;
+  position: relative;
 }
 
 .aegis-3d-card {
   position: relative;
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
-  transform-style: preserve-3d;
-  will-change: transform;
 }
 
 .aegis-glass-sheen {
@@ -177,13 +202,11 @@ body {
 }
 
 .aegis-parallax-layer {
-  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 10px);
-  transition: transform 0.15s ease-out;
+  position: relative;
 }
 
 .aegis-parallax-reverse {
-  transform: translate3d(calc(var(--parallax-x, 0px) * -0.8), calc(var(--parallax-y, 0px) * -0.8), 6px);
-  transition: transform 0.15s ease-out;
+  position: relative;
 }
 
 /* Radar pulse animation */
@@ -319,7 +342,440 @@ body {
   filter: grayscale(0.5);
 }
 
-/* 1. PRIMARY ACTION COMMAND CONTROLS */
+/* ─── AEGIS / COMMAND REUSABLE COMPONENT SYSTEM ───────────────────────── */
+
+/* 1. SEMANTIC STATUS BADGES */
+.aegis-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  line-height: 1;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.aegis-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.badge-critical {
+  background: var(--color-critical-bg);
+  border-color: var(--color-critical-border);
+  color: #F87171;
+}
+.badge-critical .aegis-badge-dot {
+  background: var(--color-critical);
+  box-shadow: 0 0 6px rgba(201, 59, 59, 0.6);
+}
+
+.badge-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: #FBBF24;
+}
+.badge-warning .aegis-badge-dot {
+  background: var(--color-warning);
+  box-shadow: 0 0 6px rgba(201, 138, 44, 0.5);
+}
+
+.badge-normal, .badge-stable {
+  background: var(--color-normal-bg);
+  border-color: var(--color-normal-border);
+  color: #4ADE80;
+}
+.badge-normal .aegis-badge-dot, .badge-stable .aegis-badge-dot {
+  background: var(--color-normal);
+  box-shadow: 0 0 6px rgba(52, 138, 100, 0.5);
+}
+
+.badge-inactive, .badge-unknown {
+  background: var(--color-inactive-bg);
+  border-color: var(--color-inactive-border);
+  color: #9AA4AF;
+}
+.badge-inactive .aegis-badge-dot, .badge-unknown .aegis-badge-dot {
+  background: var(--color-inactive);
+}
+
+.badge-sand {
+  background: var(--color-sand-subtle);
+  border-color: var(--border-sand);
+  color: var(--color-sand-light);
+}
+.badge-sand .aegis-badge-dot {
+  background: var(--color-sand);
+}
+
+/* 2. REUSABLE TACTICAL BUTTONS */
+.aegis-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  border: 1px solid transparent;
+  user-select: none;
+  line-height: 1.2;
+}
+
+.aegis-btn:active {
+  transform: translateY(1px);
+}
+
+.aegis-btn-primary {
+  background: var(--color-accent);
+  color: #F0EDE6;
+  border-color: rgba(62, 158, 116, 0.5);
+}
+.aegis-btn-primary:hover {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-light);
+  box-shadow: 0 2px 10px rgba(46, 125, 90, 0.35);
+}
+
+.aegis-btn-secondary {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+.aegis-btn-secondary:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-sand);
+  color: var(--color-sand-light);
+}
+
+.aegis-btn-outline {
+  background: transparent;
+  color: var(--color-sand);
+  border-color: var(--border-sand);
+}
+.aegis-btn-outline:hover {
+  background: var(--color-sand-subtle);
+  color: var(--text-primary);
+}
+
+.aegis-btn-critical {
+  background: var(--color-critical-bg);
+  color: #FCA5A5;
+  border-color: var(--color-critical-border);
+}
+.aegis-btn-critical:hover {
+  background: rgba(201, 59, 59, 0.25);
+  border-color: #F87171;
+}
+
+/* 3. OPERATIONAL SUMMARY CARDS */
+.aegis-summary-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.aegis-summary-card:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.aegis-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border-subtle);
+}
+
+.aegis-summary-card.accent-critical::before {
+  background: var(--color-critical);
+}
+.aegis-summary-card.accent-warning::before {
+  background: var(--color-warning);
+}
+.aegis-summary-card.accent-normal::before {
+  background: var(--color-normal);
+}
+.aegis-summary-card.accent-sand::before {
+  background: var(--color-sand);
+}
+
+/* 4. PRIORITY ATTENTION CARDS */
+.aegis-priority-card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  border-left: 3px solid var(--color-inactive);
+  transition: all 0.2s ease;
+}
+
+.aegis-priority-card:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-surface-hover);
+}
+
+.aegis-priority-card.severity-critical {
+  border-left-color: var(--color-critical);
+}
+.aegis-priority-card.severity-warning {
+  border-left-color: var(--color-warning);
+}
+.aegis-priority-card.severity-normal {
+  border-left-color: var(--color-normal);
+}
+.aegis-priority-card.severity-unknown {
+  border-left-color: var(--color-unknown);
+}
+
+/* 5. TACTICAL TABLES */
+.aegis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.aegis-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.aegis-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.aegis-table tr:hover td {
+  background: var(--bg-surface-hover);
+}
+
+/* 6. SEARCH INPUTS & SELECT CONTROLS */
+.aegis-input {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  width: 100%;
+}
+.aegis-input:focus {
+  border-color: var(--color-accent-light);
+  box-shadow: 0 0 0 2px var(--color-accent-subtle);
+}
+.aegis-input::placeholder {
+  color: var(--text-muted);
+}
+
+.aegis-select {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.16s ease;
+}
+.aegis-select:focus {
+  border-color: var(--color-accent-light);
+}
+
+/* 7. FILTER PILLS & BUTTONS */
+.aegis-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.aegis-filter-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 3px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+.aegis-filter-pill:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+.aegis-filter-pill.active {
+  background: var(--color-accent-subtle);
+  border-color: var(--border-accent);
+  color: var(--color-accent-light);
+}
+
+/* 8. MODAL DIALOGS */
+.aegis-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 13, 18, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.aegis-modal-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+.aegis-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.aegis-modal-body {
+  padding: 20px;
+}
+
+/* 9. DATA LABELS & STATS */
+.aegis-data-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  display: block;
+}
+.aegis-data-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 10. ALERT BANNERS */
+.aegis-alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.alert-banner-critical {
+  background: var(--color-critical-bg);
+  border-color: var(--color-critical-border);
+  color: #FCA5A5;
+}
+.alert-banner-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: #FDE68A;
+}
+.alert-banner-normal {
+  background: var(--color-normal-bg);
+  border-color: var(--color-normal-border);
+  color: #86EFAC;
+}
+.alert-banner-sand {
+  background: var(--color-sand-subtle);
+  border-color: var(--border-sand);
+  color: var(--color-sand-light);
+}
+
+/* 11. NAVIGATION TABS */
+.aegis-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 4px;
+}
+.aegis-tab-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+.aegis-tab-btn:hover {
+  color: var(--text-primary);
+}
+.aegis-tab-btn.active {
+  color: var(--color-sand-light);
+  border-bottom-color: var(--color-accent-light);
+}
+
+
 .btn-command-primary {
   display: inline-flex;
   align-items: center;
@@ -928,6 +1384,117 @@ body {
   80% { transform: translate(1px, 1px); }
 }
 
+@keyframes transition-digital-twin {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateZ(-40px);
+    filter: blur(8px) brightness(1.25);
+  }
+  60% {
+    filter: blur(1px) brightness(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+    filter: blur(0) brightness(1);
+  }
+}
+
+@keyframes transition-investigate {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes transition-fuse {
+  0% {
+    opacity: 0;
+    transform: scale(1.04);
+    filter: blur(8px) contrast(1.15);
+  }
+  50% {
+    filter: blur(2px) contrast(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) contrast(1);
+  }
+}
+
+@keyframes transition-simulation {
+  0% {
+    opacity: 0;
+    filter: blur(4px) brightness(1.3);
+    clip-path: inset(0 0 100% 0);
+  }
+  50% {
+    clip-path: inset(0 0 0 0);
+    filter: blur(1px) brightness(1.15);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes transition-critical {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+    filter: drop-shadow(0 0 25px rgba(217, 83, 79, 0.6)) brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent) brightness(1);
+  }
+}
+
+@keyframes transition-unknown {
+  0% {
+    opacity: 0;
+    filter: contrast(1.4) brightness(0.6) blur(6px);
+    transform: scale(1.02);
+  }
+  60% {
+    filter: contrast(1.1) brightness(0.9) blur(1px);
+  }
+  100% {
+    opacity: 1;
+    filter: contrast(1) brightness(1) blur(0);
+    transform: scale(1);
+  }
+}
+
+.simulation-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(201, 154, 69, 0.7), rgba(214, 198, 165, 0.9), rgba(201, 154, 69, 0.7), transparent);
+  box-shadow: 0 0 15px rgba(201, 154, 69, 0.8), 0 0 30px rgba(214, 198, 165, 0.5);
+  animation: scanlineSweep 2.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 50;
+}
+
+@keyframes scanlineSweep {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { top: 100%; opacity: 0; }
+}
+
 .cinematic-stage-enter {
   animation: cinematic-stage-enter 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -962,5 +1529,465 @@ body {
 
 .screen-shake-subtle {
   animation: screen-shake-subtle 0.35s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── TACTICAL APP LAYOUT & SIDEBAR ───────────────────────────────────── */
+.aegis-app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.aegis-sidebar {
+  width: 250px;
+  background: var(--bg-deep-navy);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 120;
+}
+
+.aegis-sidebar.collapsed {
+  width: 68px;
+}
+
+.aegis-sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  margin: 2px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #111827;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  position: relative;
+}
+
+.aegis-sidebar-nav-item:hover:not(.active) {
+  background: #e2e8f0;
+  color: #000000;
+  border-color: rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.aegis-sidebar-nav-item:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+}
+
+.aegis-sidebar-nav-item.active {
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--color-cyan);
+  border-color: rgba(0, 240, 255, 0.45);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.12);
+  font-weight: 600;
+}
+
+.aegis-sidebar-nav-item.active:hover {
+  background: rgba(0, 240, 255, 0.18);
+  color: var(--color-cyan);
+  border-color: rgba(0, 240, 255, 0.6);
+}
+
+.aegis-sidebar-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: var(--color-cyan);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--color-cyan);
+}
+
+.aegis-main-viewport {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+/* ─── LEAFLET DARK TACTICAL MAP OVERRIDES ─────────────────────────────── */
+.leaflet-container {
+  background: #080c14 !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Dark mode tiles styling */
+.dark-tiles .leaflet-tile {
+  filter: brightness(0.65) invert(1) contrast(2.4) hue-rotate(205deg) saturate(0.25);
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-surface-elevated) !important;
+  border: 1px solid var(--border-medium) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-surface-elevated) !important;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border-medium) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 4px !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: var(--bg-surface-elevated) !important;
+  color: var(--color-cyan) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--bg-surface-hover) !important;
+  color: #fff !important;
+}
+
+/* ─── CINEMATIC AEGIS BOOT SEQUENCE & CYBER TERMINAL ─────────────────── */
+.aegis-boot-container {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #04060A;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: var(--font-mono);
+  box-sizing: border-box;
+}
+
+.aegis-boot-container.boot-exit {
+  animation: boot-screen-exit 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes boot-screen-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.03);
+    filter: blur(4px);
+    pointer-events: none;
+  }
+}
+
+.aegis-boot-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.4;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.45) 50%) 0 0 / 100% 3px,
+              linear-gradient(90deg, rgba(0, 240, 255, 0.02), transparent 3%, transparent 97%, rgba(239, 68, 68, 0.02)) 0 0 / 100% 100%;
+}
+
+.aegis-boot-topbar {
+  width: 100%;
+  max-width: 780px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  z-index: 20;
+}
+
+.aegis-boot-skip-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #94A3B8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.aegis-boot-skip-btn:hover {
+  color: #00F0FF;
+  border-color: #00F0FF;
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.aegis-boot-window {
+  width: 100%;
+  max-width: 780px;
+  background: rgba(9, 14, 23, 0.96);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 6px;
+  padding: 24px 28px;
+  position: relative;
+  box-shadow: 0 0 45px rgba(0, 0, 0, 0.85), inset 0 0 25px rgba(0, 240, 255, 0.04);
+  position: relative;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.boot-corner-tl {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 14px;
+  height: 14px;
+  border-top: 2px solid #00F0FF;
+  border-left: 2px solid #00F0FF;
+  pointer-events: none;
+}
+
+.boot-corner-tr {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  border-top: 2px solid #EF4444;
+  border-right: 2px solid #EF4444;
+  pointer-events: none;
+}
+
+.boot-corner-bl {
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: 14px;
+  height: 14px;
+  border-bottom: 2px solid #00F0FF;
+  border-left: 2px solid #00F0FF;
+  pointer-events: none;
+}
+
+.boot-corner-br {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  border-bottom: 2px solid #EF4444;
+  border-right: 2px solid #EF4444;
+  pointer-events: none;
+}
+
+.aegis-boot-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+
+.aegis-boot-shield-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+}
+
+.boot-shield-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.25) 0%, transparent 70%);
+  animation: pulse 2.2s infinite ease-in-out;
+}
+
+.aegis-boot-terminal-body {
+  background: #05080E;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 16px 18px;
+  min-height: 230px;
+  max-height: 310px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.aegis-boot-line {
+  display: flex;
+  align-items: flex-start;
+  letter-spacing: 0.04em;
+  animation: boot-line-appear 0.16s ease-out;
+}
+
+@keyframes boot-line-appear {
+  0% {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.aegis-boot-cursor-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.aegis-boot-cursor {
+  color: #00F0FF;
+  font-size: 12px;
+  animation: boot-cursor-blink 0.8s step-end infinite;
+}
+
+@keyframes boot-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.aegis-boot-progress-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.aegis-boot-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #00F0FF 100%);
+  transition: width 0.15s ease-out;
+  box-shadow: 0 0 8px #00F0FF;
+}
+
+.aegis-boot-actions {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+.aegis-boot-enter-btn {
+  flex: 1;
+  min-height: 42px;
+  background: #00F0FF;
+  color: #04060A;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid #38BDF8;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.35);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.aegis-boot-enter-btn:hover {
+  background: #38BDF8;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.aegis-boot-enter-btn:active {
+  transform: translateY(0);
+}
+
+.aegis-boot-auth-btn {
+  background: rgba(15, 23, 42, 0.85);
+  color: #F1F5F9;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 4px;
+  padding: 0 16px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aegis-boot-auth-btn:hover {
+  border-color: #00F0FF;
+  background: rgba(0, 240, 255, 0.12);
+  color: #00F0FF;
+}
+
+@media (max-width: 640px) {
+  .aegis-boot-window {
+    padding: 16px 14px;
+  }
+  .aegis-boot-hero {
+    gap: 10px;
+  }
+  .aegis-boot-terminal-body {
+    min-height: 180px;
+    max-height: 240px;
+    font-size: 10.5px;
+  }
 }
 

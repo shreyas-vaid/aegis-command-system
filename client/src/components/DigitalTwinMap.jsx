@@ -21,8 +21,14 @@ export default function DigitalTwinMap({
   onSelectZone,
   timeOffset = 0,
   deployedResources = {},
-  weather = {}
+  weather = {},
+  activeMission = null
 }) {
+  const latVal = activeMission?.latitude ?? 30.7333;
+  const lonVal = activeMission?.longitude ?? 76.7794;
+  const latStr = `${Math.abs(latVal).toFixed(4)}° ${latVal >= 0 ? 'N' : 'S'}`;
+  const lonStr = `${Math.abs(lonVal).toFixed(4)}° ${lonVal >= 0 ? 'E' : 'W'}`;
+  const locationLabel = (activeMission?.locationName || 'CHANDIGARH').toUpperCase();
   const [activeLayers, setActiveLayers] = useState({
     flood: true,
     roads: true,
@@ -115,21 +121,6 @@ export default function DigitalTwinMap({
     );
   };
 
-  const [mapTilt, setMapTilt] = useState({ x: 0, y: 0 });
-
-  const handleMapMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setMapTilt({
-      x: -y * 3.5, // rotateX
-      y: x * 3.5   // rotateY
-    });
-  };
-
-  const handleMapMouseLeave = () => {
-    setMapTilt({ x: 0, y: 0 });
-  };
 
   return (
     <div 
@@ -155,7 +146,7 @@ export default function DigitalTwinMap({
             DIGITAL TWIN // URBAN TOPOLOGY &amp; DISASTER VECTORS
           </span>
           <span className="font-mono" style={{ fontSize: '10px', color: '#9FB5A4', marginLeft: '6px' }}>
-            GRID [34°05'N, 118°14'W] · SENSOR REFRESH: 1Hz · HOLOGRAPHIC SAND-TABLE
+            GRID [{latStr}, {lonStr}] · JURISDICTION: {locationLabel} · REFRESH: 1Hz
           </span>
         </div>
 
@@ -229,10 +220,8 @@ export default function DigitalTwinMap({
         </div>
       </div>
 
-      {/* SVG Map Canvas with Holographic Sand-Table Tilt */}
+      {/* SVG Map Canvas */}
       <div 
-        onMouseMove={handleMapMouseMove}
-        onMouseLeave={handleMapMouseLeave}
         style={{ 
           flex: 1, 
           position: 'relative', 
@@ -240,16 +229,12 @@ export default function DigitalTwinMap({
           height: '100%', 
           minHeight: '440px', 
           background: '#080D0A',
-          perspective: '1200px',
           overflow: 'hidden'
         }}
       >
         <div style={{
           width: '100%',
-          height: '100%',
-          transform: `rotateX(${mapTilt.x.toFixed(2)}deg) rotateY(${mapTilt.y.toFixed(2)}deg)`,
-          transition: 'transform 0.15s ease-out',
-          transformStyle: 'preserve-3d'
+          height: '100%'
         }}>
         
         {/* Subtle grid pattern background */}
@@ -628,7 +613,7 @@ export default function DigitalTwinMap({
         <div style={{ position: 'absolute', bottom: '12px', right: '14px', pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(8,12,18,0.7)', padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
           <span className="font-mono" style={{ fontSize: '10px', color: '#94a3b8' }}>
-            AEGIS DIGITAL TWIN CORE · REAL-TIME TELEMETRY
+            AEGIS DIGITAL TWIN · {locationLabel} · REAL-TIME SENSORS
           </span>
         </div>
 

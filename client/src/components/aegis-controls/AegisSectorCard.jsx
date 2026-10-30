@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { ShieldAlert, AlertTriangle, CheckCircle, Radio, Activity } from 'lucide-react';
 import AegisAnimatedNumber from '../aegis-interactive/AegisAnimatedNumber';
 
@@ -17,10 +17,6 @@ export default function AegisSectorCard({
   className = "",
   style = {}
 }) {
-  const cardRef = useRef(null);
-  const [coords, setCoords] = useState({ x: 50, y: 50 });
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
   if (!zone) return null;
 
   const isCritical = zone.status === 'CRITICAL' || zone.risk >= 80;
@@ -35,35 +31,12 @@ export default function AegisSectorCard({
     ? "var(--color-unknown)" 
     : "var(--color-sage)";
 
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    setCoords({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
-    const rotateY = ((x - centerX) / centerX) * 4;
-    const rotateX = -((y - centerY) / centerY) * 4;
-    setTilt({ x: rotateX, y: rotateY });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-  };
-
   return (
     <div
-      ref={cardRef}
       className={`aegis-sector-card ${className} ${isSelected ? 'is-selected' : ''}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       onClick={() => onSelect && onSelect(zone)}
       style={{
-        transform: `perspective(800px) rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg) translateZ(${isSelected ? '14px' : '0px'})`,
-        '--mouse-x': `${coords.x}%`,
-        '--mouse-y': `${coords.y}%`,
+        transform: isSelected ? 'translateY(-2px)' : 'none',
         position: 'relative',
         background: isSelected 
           ? 'linear-gradient(135deg, rgba(20, 41, 30, 0.95) 0%, rgba(13, 27, 20, 0.98) 100%)' 

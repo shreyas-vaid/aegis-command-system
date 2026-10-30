@@ -214,6 +214,8 @@ npm run client
 
 ## 🚀 Public Deployment Guide
 
+> 📖 **Hackathon Deployment Guide**: For the complete, beginner-friendly setup checklist for MongoDB Atlas M0 and Render, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
 ### 1. Database: MongoDB Atlas
 1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
 2. Create a Database User under **Database Access**.
