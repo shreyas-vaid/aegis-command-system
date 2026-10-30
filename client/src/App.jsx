@@ -18,6 +18,10 @@ import AegisAuthModal from './components/AegisAuthModal';
 import AegisProfileDrawer from './components/AegisProfileDrawer';
 import AegisOperationsDeck from './components/AegisOperationsDeck';
 import AegisNewOperationModal from './components/AegisNewOperationModal';
+import AegisSidebar from './components/AegisSidebar';
+import LiveOperationsScreen from './components/LiveOperationsScreen';
+import AnalyticsScreen from './components/AnalyticsScreen';
+import SettingsScreen from './components/SettingsScreen';
 import { 
   getState, 
   resetState, 
@@ -52,6 +56,8 @@ export default function App() {
 
   // Operations Deck & Multi-Mission Selection
   const [activeView, setActiveView] = useState('MISSION'); // 'DECK' | 'MISSION'
+  const [activePage, setActivePage] = useState('live-ops'); // 'overview' | 'mission-control' | 'live-ops' | 'incidents' | 'simulations' | 'recommendations' | 'analytics' | 'settings'
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeMissionId, setActiveMissionId] = useState('027');
   const [activeMission, setActiveMission] = useState(null);
   const [missionsList, setMissionsList] = useState([]);
@@ -284,7 +290,7 @@ export default function App() {
   const zones = worldState?.zones || [];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--color-off-white)', fontFamily: 'var(--font-body)', position: 'relative' }}>
+    <div className="aegis-app-shell">
       
       {/* Tactical Custom Pointer Cursor */}
       <AegisCursor />
@@ -298,306 +304,388 @@ export default function App() {
       {/* Tactical Operational Feedback HUD */}
       <AegisSystemFeedback activeLog={notification} />
 
-      {/* Subtle Telemetry Sync / Offline Status Bar */}
-      <div style={{
-        position: 'fixed',
-        bottom: '14px',
-        left: '18px',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        pointerEvents: 'none'
-      }}>
-        {isOffline ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
-            borderRadius: '4px',
-            background: 'rgba(23, 20, 16, 0.88)',
-            border: '1px solid rgba(245, 158, 11, 0.4)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.6)'
-          }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
-            <WifiOff size={11} color="#f59e0b" />
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-              <span className="font-mono" style={{ fontSize: '9px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
-                API OFFLINE
-              </span>
-              <span className="font-mono" style={{ fontSize: '8px', color: '#d6c6a5', letterSpacing: '0.06em' }}>
-                LOCAL SIMULATION ACTIVE
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '3px 9px',
-            borderRadius: '4px',
-            background: 'rgba(10, 20, 15, 0.75)',
-            border: '1px solid rgba(111, 148, 125, 0.3)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
-            <Radio size={10} color="#6F947D" />
-            <span className="font-mono" style={{ fontSize: '9px', color: '#a7f3d0', letterSpacing: '0.08em' }}>
-              API CONNECTED
-            </span>
-          </div>
-        )}
-
-        {/* Dynamic Premium Loading HUD State */}
-        {syncState && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '7px',
-            padding: '4px 12px',
-            borderRadius: '4px',
-            background: 'rgba(15, 23, 42, 0.92)',
-            border: '1px solid rgba(56, 189, 248, 0.5)',
-            boxShadow: '0 0 15px rgba(56, 189, 248, 0.25)',
-            animation: 'pulse 1.8s infinite ease-in-out'
-          }}>
-            <Cpu size={12} color="#38bdf8" />
-            <span className="font-mono" style={{ fontSize: '10px', color: '#38bdf8', fontWeight: '800', letterSpacing: '0.12em' }}>
-              ● {syncState}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Persistent Mission Progress Ribbon Header */}
-      <MissionNavBar
-        currentStage={currentStage}
-        onSelectStage={handleStageSelect}
-        onReset={handleReset}
-        onBack={handleBack}
-        cityHealth={currentStage === 'outcome' ? 78 : currentStage === 'simulate' ? 61 : (worldState?.cityHealth || 70)}
-        activeAlerts={currentStage === 'outcome' ? 2 : (worldState?.activeAlerts || 7)}
-        hospitalLoad={currentStage === 'outcome' ? 64 : currentStage === 'simulate' ? 91 : (worldState?.hospitalLoad || 72)}
-        mode={mode}
-        onToggleMode={handleToggleMode}
+      {/* Collapsible Left Tactical Navigation Sidebar */}
+      <AegisSidebar
+        activePage={activePage}
+        onSelectPage={(pageId) => {
+          setActivePage(pageId);
+          if (pageId === 'overview') handleStageSelect('command');
+          else if (pageId === 'mission-control') handleStageSelect('briefing');
+          else if (pageId === 'incidents') handleStageSelect('investigate');
+          else if (pageId === 'simulations') handleStageSelect('simulate');
+          else if (pageId === 'recommendations') handleStageSelect('explain');
+        }}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         currentUser={currentUser}
         currentOrg={currentOrg}
-        activeMission={activeMission}
-        missionsList={missionsList}
-        onSelectMission={(mId) => {
-          const m = missionsList.find(x => (x.missionId || x.id || x._id) === mId);
-          if (m) handleSelectOperation(m);
-        }}
-        activeView={activeView}
-        onNavigateToDeck={() => setActiveView(activeView === 'DECK' ? 'MISSION' : 'DECK')}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        mode={mode}
+        onToggleMode={handleToggleMode}
         onOpenProfile={() => setIsProfileDrawerOpen(true)}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        alertCount={worldState?.activeAlerts || 7}
+        criticalIncidentsCount={2}
       />
 
-      {/* Dedicated Interactive Stage Screen or Operations Deck */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10 }}>
-        {activeView === 'DECK' ? (
-          <AegisOperationsDeck
-            missions={missionsList}
-            currentOrg={currentOrg}
-            currentUser={currentUser}
-            onSelectOperation={handleSelectOperation}
-            onOpenNewOperationModal={() => setIsNewOpModalOpen(true)}
-            onRefreshMissions={fetchMissionsList}
-            onEnterDemoMode={() => {
-              setMode('DEMO');
-              setActiveView('MISSION');
-              setActiveMissionId('027');
-              fetchWorldState(true, '027');
-              showToast("> PROTOTYPE DEMO MODE ENGAGED // SCENARIO #027", "info");
-            }}
-          />
-        ) : (
-          <AegisCinematicTransition stage={currentStage}>
-          
-          {/* STAGE 1: MISSION BRIEFING */}
-          {currentStage === 'briefing' && (
-            <MissionBriefingScreen
-              cityHealth={worldState?.cityHealth || 70}
-              activeAlerts={worldState?.activeAlerts || 7}
-              unknownZones={worldState?.unknownZones || 1}
-              activeMission={activeMission}
-              onBeginOperation={() => {
-                handleStageSelect('investigate');
-                showToast(`> OPERATION #${activeMission?.missionId || '027'} INITIATED // LIVE SENSOR ARRAYS ONLINE`, "info");
-              }}
-            />
+      {/* Main Viewport Container */}
+      <div className="aegis-main-viewport">
+
+        {/* Subtle Telemetry Sync / Offline Status Bar */}
+        <div style={{
+          position: 'fixed',
+          bottom: '14px',
+          left: sidebarCollapsed ? '82px' : '264px',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          pointerEvents: 'none',
+          transition: 'left 0.22s ease'
+        }}>
+          {isOffline ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              background: 'rgba(23, 20, 16, 0.88)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.6)'
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
+              <WifiOff size={11} color="#f59e0b" />
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                <span className="font-mono" style={{ fontSize: '9px', color: '#fcd34d', fontWeight: '700', letterSpacing: '0.08em' }}>
+                  API OFFLINE
+                </span>
+                <span className="font-mono" style={{ fontSize: '8px', color: '#d6c6a5', letterSpacing: '0.06em' }}>
+                  LOCAL SIMULATION ACTIVE
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 9px',
+              borderRadius: '4px',
+              background: 'rgba(10, 20, 15, 0.75)',
+              border: '1px solid rgba(0, 240, 255, 0.3)',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00F0FF', boxShadow: '0 0 6px #00F0FF' }} />
+              <Radio size={10} color="#00F0FF" />
+              <span className="font-mono" style={{ fontSize: '9px', color: '#a7f3d0', letterSpacing: '0.08em' }}>
+                API CONNECTED
+              </span>
+            </div>
           )}
 
-          {/* STAGE 2: INCIDENT INVESTIGATION */}
-          {currentStage === 'investigate' && (
-            <IncidentInvestigationScreen
-              onFuseIncident={() => {
-                handleStageSelect('fuse');
-                showToast("> MULTI-SIGNAL SYNTHESIS // 5 SOURCES CORRELATED", "success");
-              }}
-            />
+          {/* Dynamic Loading HUD State */}
+          {syncState && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              padding: '4px 12px',
+              borderRadius: '4px',
+              background: 'rgba(15, 23, 42, 0.92)',
+              border: '1px solid rgba(0, 240, 255, 0.5)',
+              boxShadow: '0 0 15px rgba(0, 240, 255, 0.25)',
+              animation: 'pulse 1.8s infinite ease-in-out'
+            }}>
+              <Cpu size={12} color="#00F0FF" />
+              <span className="font-mono" style={{ fontSize: '10px', color: '#00F0FF', fontWeight: '800', letterSpacing: '0.12em' }}>
+                ● {syncState}
+              </span>
+            </div>
           )}
+        </div>
 
-          {/* STAGE 3: INCIDENT FUSION */}
-          {currentStage === 'fuse' && (
-            <IncidentFusionScreen
-              onRevealDigitalTwin={() => {
-                handleStageSelect('map');
-                showToast("> DIGITAL TWIN MATRIX ONLINE // 5 SECTORS SYNCHRONIZED", "success");
-              }}
-            />
-          )}
+        {/* Persistent Mission Progress Ribbon Header */}
+        <MissionNavBar
+          currentStage={currentStage}
+          onSelectStage={(stageId) => {
+            handleStageSelect(stageId);
+            if (stageId === 'command') setActivePage('overview');
+            else if (stageId === 'briefing') setActivePage('mission-control');
+            else if (stageId === 'investigate' || stageId === 'fuse') setActivePage('incidents');
+            else if (stageId === 'strategy' || stageId === 'simulate' || stageId === 'chess' || stageId === 'deploy' || stageId === 'outcome') setActivePage('simulations');
+            else if (stageId === 'explain' || stageId === 'unknown') setActivePage('recommendations');
+            else if (stageId === 'map') setActivePage('live-ops');
+          }}
+          onReset={handleReset}
+          onBack={handleBack}
+          cityHealth={currentStage === 'outcome' ? 78 : currentStage === 'simulate' ? 61 : (worldState?.cityHealth || 70)}
+          activeAlerts={currentStage === 'outcome' ? 2 : (worldState?.activeAlerts || 7)}
+          hospitalLoad={currentStage === 'outcome' ? 64 : currentStage === 'simulate' ? 91 : (worldState?.hospitalLoad || 72)}
+          mode={mode}
+          onToggleMode={handleToggleMode}
+          currentUser={currentUser}
+          currentOrg={currentOrg}
+          activeMission={activeMission}
+          missionsList={missionsList}
+          onSelectMission={(mId) => {
+            const m = missionsList.find(x => (x.missionId || x.id || x._id) === mId);
+            if (m) handleSelectOperation(m);
+          }}
+          activeView={activeView}
+          onNavigateToDeck={() => setActiveView(activeView === 'DECK' ? 'MISSION' : 'DECK')}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onOpenProfile={() => setIsProfileDrawerOpen(true)}
+        />
 
-          {/* STAGE 4: DIGITAL TWIN HERO MAP */}
-          {currentStage === 'map' && (
-            <DigitalTwinScreen
-              zones={zones}
-              activeMission={activeMission}
-              onExplainRisk={(exp, zid) => {
-                if (exp) setActiveExplanation(exp);
-                if (zid) setActiveZoneId(zid);
-                handleStageSelect('explain');
-                showToast("> TELEMETRY LINK ESTABLISHED // XAI FACTOR ATTRIBUTION LOADED", "info");
-              }}
-              onInvestigateUnknown={() => {
-                handleStageSelect('unknown');
-                showToast("> RECONNAISSANCE PROTOCOL ENGAGED // PROBING ZONE E BLACKOUT", "warning");
-              }}
-            />
-          )}
-
-          {/* STAGE 5: UNKNOWN ZONE INTELLIGENCE */}
-          {currentStage === 'unknown' && (
-            <UnknownZoneScreen
-              onProceedToExplain={() => {
-                handleStageSelect('explain');
-                showToast("> ZONE E BLACKOUT UNMASKED // ATTRIBUTION BREAKDOWN READY", "info");
-              }}
-              onZoneUpdated={(updatedZone) => {
-                showToast(`> SECTOR ${updatedZone.id} STATUS UPDATED // ${updatedZone.status}`, "warning");
-                fetchWorldState();
-              }}
-            />
-          )}
-
-          {/* STAGE 6: EXPLAINABLE AI (XAI) */}
-          {currentStage === 'explain' && (
-            <ExplainableAIScreen
-              explanation={activeExplanation}
-              zoneId={activeZoneId}
-              onEnterCommandCenter={() => {
-                handleStageSelect('command');
-                showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
-              }}
-            />
-          )}
-
-          {/* STAGE 7: COMMAND CENTER & AVAILABLE FLEET */}
-          {currentStage === 'command' && (
-            <CommandCenterScreen
-              currentUser={currentUser}
+        {/* Dedicated Interactive Screen Content Area */}
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10 }}>
+          {activeView === 'DECK' ? (
+            <AegisOperationsDeck
+              missions={missionsList}
               currentOrg={currentOrg}
-              activeMission={activeMission}
-              worldState={worldState}
-              zones={worldState?.zones || []}
-              incidents={worldState?.incidents || []}
-              resources={worldState?.resources || []}
-              onNavigateStage={handleStageSelect}
-              onSelectZone={(zoneId, exp) => {
-                if (zoneId) setActiveZoneId(zoneId);
-                if (exp) setActiveExplanation(exp);
-                handleStageSelect('explain');
-              }}
-              onResourceAssigned={(unit, targetZone) => {
-                showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
-              }}
-              onCreatePlan={() => {
-                handleStageSelect('strategy');
-                showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");
+              currentUser={currentUser}
+              onSelectOperation={handleSelectOperation}
+              onOpenNewOperationModal={() => setIsNewOpModalOpen(true)}
+              onRefreshMissions={fetchMissionsList}
+              onEnterDemoMode={() => {
+                setMode('DEMO');
+                setActiveView('MISSION');
+                setActiveMissionId('027');
+                fetchWorldState(true, '027');
+                showToast("> PROTOTYPE DEMO MODE ENGAGED // SCENARIO #027", "info");
               }}
             />
+          ) : (
+            <>
+              {/* PAGE 1: MERGED LIVE OPERATIONS (CENTRAL DISASTER MAP & RESOURCE DEPLOYMENT) */}
+              {activePage === 'live-ops' && (
+                <LiveOperationsScreen
+                  activeMission={activeMission}
+                  currentUser={currentUser}
+                  onResourceAssigned={(unit, targetZone) => {
+                    showToast(`> FLEET DEPLOYED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
+                    fetchWorldState();
+                  }}
+                  onNavigateStage={(stageId) => {
+                    if (stageId === 'command') setActivePage('overview');
+                    else if (stageId === 'briefing') setActivePage('mission-control');
+                    else if (stageId === 'unknown') {
+                      setActivePage('incidents');
+                      handleStageSelect('unknown');
+                    } else {
+                      handleStageSelect(stageId);
+                    }
+                  }}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* PAGE 2: COMMAND OVERVIEW */}
+              {activePage === 'overview' && (
+                <CommandCenterScreen
+                  currentUser={currentUser}
+                  currentOrg={currentOrg}
+                  activeMission={activeMission}
+                  worldState={worldState}
+                  zones={zones}
+                  incidents={worldState?.incidents || []}
+                  resources={worldState?.resources || []}
+                  onNavigateStage={(stageId) => {
+                    if (stageId === 'map') setActivePage('live-ops');
+                    else if (stageId === 'strategy') {
+                      setActivePage('simulations');
+                      handleStageSelect('strategy');
+                    } else if (stageId === 'investigate') {
+                      setActivePage('incidents');
+                      handleStageSelect('investigate');
+                    } else if (stageId === 'unknown') {
+                      setActivePage('incidents');
+                      handleStageSelect('unknown');
+                    } else {
+                      handleStageSelect(stageId);
+                    }
+                  }}
+                  onSelectZone={(zoneId, exp) => {
+                    if (zoneId) setActiveZoneId(zoneId);
+                    if (exp) setActiveExplanation(exp);
+                    setActivePage('recommendations');
+                    handleStageSelect('explain');
+                  }}
+                  onResourceAssigned={(unit, targetZone) => {
+                    showToast(`> RESOURCE STAGED // ${unit.callsign || unit.name} ASSIGNED TO ZONE ${targetZone}`, "success");
+                  }}
+                  onCreatePlan={() => {
+                    setActivePage('simulations');
+                    handleStageSelect('strategy');
+                    showToast("> FLEET 14/14 DISPATCH READY // DUAL RESPONSE FORMULATION ACTIVE", "info");
+                  }}
+                />
+              )}
+
+              {/* PAGE 3: MISSION CONTROL */}
+              {activePage === 'mission-control' && (
+                <AegisCinematicTransition stage={currentStage}>
+                  <MissionBriefingScreen
+                    cityHealth={worldState?.cityHealth || 70}
+                    activeAlerts={worldState?.activeAlerts || 7}
+                    unknownZones={worldState?.unknownZones || 1}
+                    activeMission={activeMission}
+                    missionsList={missionsList}
+                    resources={worldState?.resources || []}
+                    onSelectMission={(mId) => {
+                      const m = missionsList.find(x => (x.missionId || x.id || x._id) === mId);
+                      if (m) handleSelectOperation(m);
+                    }}
+                    onBeginOperation={() => {
+                      setActivePage('incidents');
+                      handleStageSelect('investigate');
+                      showToast(`> OPERATION #${activeMission?.missionId || '027'} INITIATED // LIVE SENSOR ARRAYS ONLINE`, "info");
+                    }}
+                  />
+                </AegisCinematicTransition>
+              )}
+
+              {/* PAGE 4: INCIDENTS */}
+              {activePage === 'incidents' && (
+                <AegisCinematicTransition stage={currentStage}>
+                  {currentStage === 'unknown' ? (
+                    <UnknownZoneScreen
+                      onProceedToExplain={() => {
+                        setActivePage('recommendations');
+                        handleStageSelect('explain');
+                        showToast("> ZONE E BLACKOUT UNMASKED // ATTRIBUTION BREAKDOWN READY", "info");
+                      }}
+                      onZoneUpdated={(updatedZone) => {
+                        showToast(`> SECTOR ${updatedZone.id} STATUS UPDATED // ${updatedZone.status}`, "warning");
+                        fetchWorldState();
+                      }}
+                    />
+                  ) : currentStage === 'fuse' ? (
+                    <IncidentFusionScreen
+                      onRevealDigitalTwin={() => {
+                        setActivePage('live-ops');
+                        showToast("> DIGITAL TWIN MATRIX ONLINE // 5 SECTORS SYNCHRONIZED", "success");
+                      }}
+                    />
+                  ) : (
+                    <IncidentInvestigationScreen
+                      onFuseIncident={() => {
+                        handleStageSelect('fuse');
+                        showToast("> MULTI-SIGNAL SYNTHESIS // 5 SOURCES CORRELATED", "success");
+                      }}
+                    />
+                  )}
+                </AegisCinematicTransition>
+              )}
+
+              {/* PAGE 5: SIMULATIONS */}
+              {activePage === 'simulations' && (
+                <AegisCinematicTransition stage={currentStage}>
+                  {currentStage === 'strategy' ? (
+                    <StrategyScreen
+                      onRunHumanPlan={() => {
+                        setActiveStrategy('human');
+                        handleStageSelect('simulate');
+                        showToast("> HUMAN MANUAL OVERRIDE ENGAGED // TEMPORAL PROJECTION COMMENCED", "info");
+                      }}
+                      onRunAiPlan={() => {
+                        setActiveStrategy('ai');
+                        handleStageSelect('simulate');
+                        showToast("> AEGIS BAYESIAN OPTIMIZATION ENGAGED // TEMPORAL PROJECTION COMMENCED", "success");
+                      }}
+                    />
+                  ) : currentStage === 'chess' ? (
+                    <TacticalChessScreen
+                      onProceedToDeploy={(piece) => {
+                        setDeployedPiece({
+                          callsign: piece.name,
+                          type: piece.type,
+                          from: piece.current,
+                          via: piece.route,
+                          to: piece.target,
+                          etaMinutes: piece.etaMinutes || 14
+                        });
+                        handleStageSelect('deploy');
+                        showToast(`> DISPATCH CONFIRMED // ${piece.name} IN TRANSIT VIA ${piece.route}`, "success");
+                      }}
+                    />
+                  ) : currentStage === 'deploy' ? (
+                    <DeploymentAnimationScreen
+                      deployedUnit={deployedPiece}
+                      onCompleteDeployment={() => {
+                        handleStageSelect('outcome');
+                        showToast("> ON-SCENE ARRIVAL CONFIRMED // SYNTHESIZING AFTER ACTION REPORT", "success");
+                      }}
+                    />
+                  ) : currentStage === 'outcome' ? (
+                    <OutcomeScreen
+                      onReplay={() => {
+                        setActivePage('mission-control');
+                        handleStageSelect('briefing');
+                        showToast("> OPERATION #027 REINITIALIZING TO BASELINE BRIEFING", "info");
+                      }}
+                      onTryDifferentStrategy={() => {
+                        handleStageSelect('strategy');
+                        showToast("> STRATEGY CONSOLE RESTORED // FORMULATING ALTERNATE DISPATCH", "info");
+                      }}
+                      onReturnToCommand={() => {
+                        setActivePage('overview');
+                        handleStageSelect('command');
+                        showToast("> RETURNING TO INCIDENT COMMAND FLEET MATRIX", "info");
+                      }}
+                    />
+                  ) : (
+                    <DisasterSimulationScreen
+                      onProceedToChess={() => {
+                        handleStageSelect('chess');
+                        showToast("> PROJECTION VERIFIED // DISASTER CHESS TACTICAL BOARD ACTIVE", "info");
+                      }}
+                    />
+                  )}
+                </AegisCinematicTransition>
+              )}
+
+              {/* PAGE 6: RECOMMENDATIONS */}
+              {activePage === 'recommendations' && (
+                <AegisCinematicTransition stage="explain">
+                  <ExplainableAIScreen
+                    explanation={activeExplanation}
+                    zoneId={activeZoneId}
+                    onEnterCommandCenter={() => {
+                      setActivePage('overview');
+                      handleStageSelect('command');
+                      showToast("> XAI ATTRIBUTION LOGGED // COMMAND TERMINAL OPENED", "info");
+                    }}
+                  />
+                </AegisCinematicTransition>
+              )}
+
+              {/* PAGE 7: ANALYTICS */}
+              {activePage === 'analytics' && (
+                <AnalyticsScreen
+                  worldState={worldState}
+                  activeMission={activeMission}
+                />
+              )}
+
+              {/* PAGE 8: SETTINGS */}
+              {activePage === 'settings' && (
+                <SettingsScreen
+                  currentUser={currentUser}
+                  currentOrg={currentOrg}
+                  mode={mode}
+                  onToggleMode={handleToggleMode}
+                  onReset={handleReset}
+                  onOpenAuth={() => setIsAuthModalOpen(true)}
+                  onLogout={handleLogout}
+                  showToast={showToast}
+                />
+              )}
+            </>
           )}
-
-        {/* STAGE 8: HUMAN VS AI COMMAND STRATEGY */}
-        {currentStage === 'strategy' && (
-          <StrategyScreen
-            onRunHumanPlan={() => {
-              setActiveStrategy('human');
-              handleStageSelect('simulate');
-              showToast("> HUMAN MANUAL OVERRIDE ENGAGED // TEMPORAL PROJECTION COMMENCED", "info");
-            }}
-            onRunAiPlan={() => {
-              setActiveStrategy('ai');
-              handleStageSelect('simulate');
-              showToast("> AEGIS BAYESIAN OPTIMIZATION ENGAGED // TEMPORAL PROJECTION COMMENCED", "success");
-            }}
-          />
-        )}
-
-        {/* STAGE 9: BUTTERFLY EFFECT SIMULATION */}
-        {currentStage === 'simulate' && (
-          <DisasterSimulationScreen
-            onProceedToChess={() => {
-              handleStageSelect('chess');
-              showToast("> PROJECTION VERIFIED // DISASTER CHESS TACTICAL BOARD ACTIVE", "info");
-            }}
-          />
-        )}
-
-        {/* STAGE 10: DISASTER CHESS TACTICAL BOARD */}
-        {currentStage === 'chess' && (
-          <TacticalChessScreen
-            onProceedToDeploy={(piece) => {
-              setDeployedPiece({
-                callsign: piece.name,
-                type: piece.type,
-                from: piece.current,
-                via: piece.route,
-                to: piece.target,
-                etaMinutes: piece.etaMinutes || 14
-              });
-              handleStageSelect('deploy');
-              showToast(`> DISPATCH CONFIRMED // ${piece.name} IN TRANSIT VIA ${piece.route}`, "success");
-            }}
-          />
-        )}
-
-        {/* STAGE 11: LIVE ASSET DEPLOYMENT ANIMATION */}
-        {currentStage === 'deploy' && (
-          <DeploymentAnimationScreen
-            deployedUnit={deployedPiece}
-            onCompleteDeployment={() => {
-              handleStageSelect('outcome');
-              showToast("> ON-SCENE ARRIVAL CONFIRMED // SYNTHESIZING AFTER ACTION REPORT", "success");
-            }}
-          />
-        )}
-
-        {/* STAGE 12: AFTER ACTION OUTCOME */}
-        {currentStage === 'outcome' && (
-          <OutcomeScreen
-            onReplay={() => {
-              handleStageSelect('briefing');
-              showToast("> OPERATION #027 REINITIALIZING TO BASELINE BRIEFING", "info");
-            }}
-            onTryDifferentStrategy={() => {
-              handleStageSelect('strategy');
-              showToast("> STRATEGY CONSOLE RESTORED // FORMULATING ALTERNATE DISPATCH", "info");
-            }}
-            onReturnToCommand={() => {
-              handleStageSelect('command');
-              showToast("> RETURNING TO INCIDENT COMMAND FLEET MATRIX", "info");
-            }}
-          />
-        )}
-
-        </AegisCinematicTransition>
-        )}
-      </main>
+        </main>
+      </div>
 
       {/* AEGIS 2.0 Identification & Authentication Portal */}
       <AegisAuthModal

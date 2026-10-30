@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   CloudRain, 
   Waves, 
@@ -10,9 +10,18 @@ import {
   X, 
   Plus, 
   Sparkles,
-  Terminal
+  Terminal,
+  Search,
+  Filter,
+  ArrowUpDown,
+  Clock,
+  ChevronRight,
+  ShieldAlert,
+  SlidersHorizontal,
+  Flame,
+  FileText
 } from 'lucide-react';
-import { AegisPrimaryCommand, AegisCommandModule } from './aegis-controls';
+import { AegisPrimaryCommand } from './aegis-controls';
 import { Aegis3DCard } from './aegis-interactive';
 
 export default function IncidentInvestigationScreen({
@@ -20,117 +29,199 @@ export default function IncidentInvestigationScreen({
 }) {
   const [activeModalSignal, setActiveModalSignal] = useState(null);
   const [collectedEvidence, setCollectedEvidence] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterSeverity, setFilterSeverity] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING' | 'ELEVATED'
+  const [sortBy, setSortBy] = useState('RISK_DESC'); // 'RISK_DESC' | 'CONFIDENCE_DESC' | 'TAG_ASC'
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
 
   const signals = [
     {
       id: "weather",
       tag: "WEATHER",
-      headline: "Heavy Rainfall",
+      severity: "CRITICAL",
+      headline: "Heavy Rainfall Convective Cell",
       value: "42 mm/hr",
       icon: CloudRain,
-      color: "#6F947D",
-      source: "Weather Radar + METAR",
+      color: "#00F0FF",
+      source: "Weather Radar + METAR Station",
       confidence: "94%",
+      confidenceNum: 94,
       risk: "+31",
-      description: "Localized atmospheric activity detected over North-South drainage corridor. Soil absorption reached saturation.",
+      riskNum: 31,
+      timestamp: "09:12 UTC",
+      description: "Localized atmospheric activity detected over North-South drainage corridor. Soil absorption reached saturation with surface flash runoff.",
       rawTelemetry: [
         { label: "rainfall_intensity", value: "42 mm/hr" },
         { label: "trend", value: "increasing (+14% / hr)" },
         { label: "radar_reflectivity", value: "54 dBZ" },
         { label: "cell_velocity", value: "18 kt (Stationary Stall)" }
+      ],
+      history: [
+        { time: "08:30 UTC", event: "Rainfall rate crossed 25 mm/h warning threshold" },
+        { time: "09:00 UTC", event: "Flash flood advisory issued by Meteorological Bureau" },
+        { time: "09:12 UTC", event: "Stationary convective cell locked over Sector 17 & 32" }
       ]
     },
     {
       id: "river",
       tag: "RIVER",
-      headline: "Water Expansion",
+      severity: "CRITICAL",
+      headline: "Water Expansion & Basin Breach",
       value: "+3.4m Crest",
       icon: Waves,
-      color: "#9FB5A4",
+      color: "#38BDF8",
       source: "IoT River Basin Piezometers",
       confidence: "96%",
+      confidenceNum: 96,
       risk: "+24",
-      description: "Rapid water expansion cresting natural banks by +3.4m. Inundating dual-carriageway and Levee Berm #2.",
+      riskNum: 24,
+      timestamp: "09:18 UTC",
+      description: "Rapid water expansion cresting natural river banks by +3.4m. Inundating dual-carriageway and Levee Berm #2 with rapid scour.",
       rawTelemetry: [
         { label: "crest_delta", value: "+3.4m above baseline" },
         { label: "stream_flow", value: "410 m³/sec" },
         { label: "flood_stage", value: "Stage 3 (Major Inundation)" },
         { label: "berm_pore_pressure", value: "184 kPa (Warning)" }
+      ],
+      history: [
+        { time: "08:15 UTC", event: "Berm hydro sensor telemetry normal (0.8m)" },
+        { time: "08:50 UTC", event: "Water velocity surged to 320 m³/s" },
+        { time: "09:18 UTC", event: "Major overflow reported across Levee Berm 2" }
       ]
     },
     {
       id: "road",
       tag: "ROAD",
-      headline: "Road 17 Failure",
-      value: "Structural Stress",
+      severity: "CRITICAL",
+      headline: "Road 17 Culvert Failure",
+      value: "Structural Washout",
       icon: AlertTriangle,
-      color: "#D9534F",
+      color: "#EF4444",
       source: "DOT Inductive Loop Sensors & Satellite SAR",
       confidence: "98%",
+      confidenceNum: 98,
       risk: "+28",
-      description: "Culvert washout on Road 17 completely blocks primary ambulance artery into South General Hospital.",
+      riskNum: 28,
+      timestamp: "09:22 UTC",
+      description: "Culvert washout on arterial Road 17 completely blocks primary ambulance artery into South General Hospital.",
       rawTelemetry: [
         { label: "culvert_breach", value: "true (washout confirmed)" },
         { label: "vehicle_velocity", value: "0 km/h (complete stoppage)" },
         { label: "flow_degradation", value: "-98.4%" },
         { label: "bridge17_pylon_deflection", value: "14 cm lateral shift" }
+      ],
+      history: [
+        { time: "08:45 UTC", event: "Inductive loops recorded traffic slowdown to 12 km/h" },
+        { time: "09:10 UTC", event: "Structural acoustic sensor detected concrete shearing" },
+        { time: "09:22 UTC", event: "Road officially closed; traffic diversion engaged" }
       ]
     },
     {
       id: "hospital",
       tag: "HOSPITAL",
-      headline: "Trauma Load Surge",
+      severity: "WARNING",
+      headline: "Trauma Load & ICU Intake Surge",
       value: "72% Load & Rising",
       icon: Activity,
-      color: "#C99A45",
+      color: "#F59E0B",
       source: "South General Emergency Intake Core",
       confidence: "99%",
+      confidenceNum: 99,
       risk: "+26",
-      description: "Level-1 emergency bay at 72% capacity. Ambulance queue stalled on flooded access road.",
+      riskNum: 26,
+      timestamp: "09:25 UTC",
+      description: "Level-1 emergency bay at 72% capacity. Ambulance queue stalled on flooded access road with urgent surgical transfers pending.",
       rawTelemetry: [
         { label: "ambulance_wait_time", value: "+38 minutes" },
         { label: "triage_beds_occupied", value: "72% (Critical Intake)" },
         { label: "trauma_queue_count", value: "18 emergency patients" },
         { label: "generator_substation_water_level", value: "0.4m (Risk Zone)" }
+      ],
+      history: [
+        { time: "08:00 UTC", event: "Shift change; hospital load at 44% baseline" },
+        { time: "09:05 UTC", event: "First ambulance divert requested due to road water" },
+        { time: "09:25 UTC", event: "Hospital emergency power protocol placed on standby" }
       ]
     },
     {
       id: "comms",
       tag: "COMMUNICATION",
-      headline: "Zone E Silence",
+      severity: "WARNING",
+      headline: "Zone E Sensor Grid Silence",
       value: "12% Connectivity",
       icon: Radio,
-      color: "#8B72A8",
+      color: "#8B7FA8",
       source: "Cellular Tower Grid Diagnostic",
       confidence: "97%",
+      confidenceNum: 97,
       risk: "+20",
-      description: "88% telecom blackout in East Delta. Zero emergency calls received despite severe localized radar cell.",
+      riskNum: 20,
+      timestamp: "09:28 UTC",
+      description: "88% telecom blackout in East Delta. Zero emergency calls received despite severe localized radar cell and stalled vehicle pings.",
       rawTelemetry: [
         { label: "link_loss", value: "88% cellular blackout" },
         { label: "packet_drop", value: "99.4%" },
         { label: "gps_transponder_beacons", value: "140+ stalled units" },
         { label: "tower_grid_status", value: "Towers 4A & 4B offline" }
+      ],
+      history: [
+        { time: "08:35 UTC", event: "Tower 4A backup generator battery fault" },
+        { time: "09:00 UTC", event: "Tower 4B fiber uplink severed at railway bridge" },
+        { time: "09:28 UTC", event: "Total RF telemetry blackout across Sector E" }
       ]
     },
     {
       id: "emergency",
       tag: "EMERGENCY",
-      headline: "Casualty Distress",
+      severity: "CRITICAL",
+      headline: "E-911 Casualty Distress Influx",
       value: "14 Dispatch Reports",
       icon: PhoneCall,
-      color: "#D9534F",
+      color: "#EF4444",
       source: "E-911 Emergency Telephony Dispatch",
       confidence: "98%",
+      confidenceNum: 98,
       risk: "+18",
-      description: "14 concurrent distress calls reporting trapped vehicles and rising water levels along South General access corridor.",
+      riskNum: 18,
+      timestamp: "09:30 UTC",
+      description: "14 concurrent distress calls reporting trapped vehicles and rapid water infiltration along South General access corridor.",
       rawTelemetry: [
         { label: "active_calls", value: "14 distress lines open" },
         { label: "unanswered_queue", value: "6 callers waiting" },
         { label: "priority_level", value: "RED (Water Ingress / Trauma)" },
         { label: "cad_incident_id", value: "#027-EOC" }
+      ],
+      history: [
+        { time: "09:02 UTC", event: "First stranded motorist report on Road 17" },
+        { time: "09:15 UTC", event: "Call influx rate jumped from 3/hr to 28/hr" },
+        { time: "09:30 UTC", event: "High priority rescue requests transferred to CAD" }
       ]
     }
   ];
+
+  // Filter and sort signals
+  const filteredSignals = useMemo(() => {
+    return signals
+      .filter(sig => {
+        if (filterSeverity !== 'ALL' && sig.severity !== filterSeverity) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          return (
+            sig.headline.toLowerCase().includes(q) ||
+            sig.tag.toLowerCase().includes(q) ||
+            sig.description.toLowerCase().includes(q) ||
+            sig.source.toLowerCase().includes(q)
+          );
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'RISK_DESC') return b.riskNum - a.riskNum;
+        if (sortBy === 'CONFIDENCE_DESC') return b.confidenceNum - a.confidenceNum;
+        if (sortBy === 'TAG_ASC') return a.tag.localeCompare(b.tag);
+        return 0;
+      });
+  }, [signals, filterSeverity, searchQuery, sortBy]);
 
   const handleCollect = (signal) => {
     if (!collectedEvidence.includes(signal.id)) {
@@ -147,67 +238,180 @@ export default function IncidentInvestigationScreen({
       minHeight: '85vh',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      maxWidth: '1100px',
+      padding: '24px 28px 60px',
+      maxWidth: '1380px',
       margin: '0 auto',
       width: '100%',
       position: 'relative'
     }}>
       
-      {/* Investigation Header */}
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <span className="font-hud" style={{ fontSize: '13px', letterSpacing: '0.2em', color: 'var(--color-beige)', textTransform: 'uppercase' }}>
-          STAGE 2 // INCIDENT INVESTIGATION
-        </span>
-        <h2 className="font-hud" style={{ fontSize: '32px', fontWeight: '700', color: 'var(--color-off-white)', margin: '4px 0' }}>
-          "Something is happening in South Sector."
-        </h2>
-        <p className="font-mono" style={{ fontSize: '13px', color: 'var(--color-sage-light)', margin: 0 }}>
-          Probe live sensor signals, examine raw telemetry, and collect evidence to correlate the crisis cluster.
-        </p>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid var(--border-subtle)',
+        paddingBottom: '16px',
+        marginBottom: '20px',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span className="aegis-badge badge-critical">
+              <span className="aegis-badge-dot" />
+              STAGE 02 // MULTI-SIGNAL INVESTIGATION
+            </span>
+            <span className="font-mono" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              ACTIVE CRISIS CORRELATION
+            </span>
+          </div>
+          <h1 className="font-hud" style={{ fontSize: '26px', fontWeight: '800', color: '#FFFFFF', margin: 0 }}>
+            INCIDENT INVESTIGATION &amp; SIGNAL SYNTHESIS
+          </h1>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+            Probe multi-source sensory telemetries, dissect telemetry payloads, and collect key evidence to feed the Data Fusion Engine.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => setShowHistoryDrawer(!showHistoryDrawer)}
+            className="aegis-btn aegis-btn-secondary"
+            style={{ fontSize: '11px' }}
+          >
+            <Clock size={13} />
+            <span>INCIDENT AUDIT LOG ({signals.length})</span>
+          </button>
+
+          <span className="aegis-badge badge-sand" style={{ fontSize: '11px' }}>
+            EVIDENCE COLLECTED: {collectedEvidence.length} / 6
+          </span>
+        </div>
       </div>
 
-      {/* 6 Large Interactive Evidence Cards */}
+      {/* Search & Severity Filters Toolbar */}
+      <div style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '6px',
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginBottom: '20px'
+      }}>
+        {/* Search Input */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '240px', maxWidth: '420px' }}>
+          <Search size={15} color="var(--text-muted)" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search signals, telemetry variables, sensor sources..."
+            className="aegis-input"
+            style={{ padding: '6px 10px', fontSize: '12px' }}
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Filters & Sorting */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
+              SEVERITY:
+            </span>
+            <button
+              onClick={() => setFilterSeverity('ALL')}
+              className={`aegis-filter-pill ${filterSeverity === 'ALL' ? 'active' : ''}`}
+            >
+              ALL ({signals.length})
+            </button>
+            <button
+              onClick={() => setFilterSeverity('CRITICAL')}
+              className={`aegis-filter-pill ${filterSeverity === 'CRITICAL' ? 'active' : ''}`}
+            >
+              CRITICAL (3)
+            </button>
+            <button
+              onClick={() => setFilterSeverity('WARNING')}
+              className={`aegis-filter-pill ${filterSeverity === 'WARNING' ? 'active' : ''}`}
+            >
+              WARNING (2)
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
+              SORT:
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="aegis-select"
+            >
+              <option value="RISK_DESC">HIGHEST RISK IMPACT</option>
+              <option value="CONFIDENCE_DESC">HIGHEST CONFIDENCE</option>
+              <option value="TAG_ASC">CATEGORY ALPHABETICAL</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid: 6 Interactive Evidence Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '18px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+        gap: '16px',
         width: '100%',
         marginBottom: '28px'
       }}>
-        {signals.map(sig => {
+        {filteredSignals.map(sig => {
           const Icon = sig.icon;
           const collected = isCollected(sig.id);
 
           return (
-            <Aegis3DCard
+            <div
               key={sig.id}
               onClick={() => setActiveModalSignal(sig)}
-              className="hud-panel hud-bracket"
-              expandOnClick={true}
-              data-cursor="probe"
+              className="aegis-card"
               style={{
-                padding: '22px',
-                background: collected ? 'rgba(111, 148, 125, 0.16)' : 'rgba(14, 27, 21, 0.78)',
-                border: collected ? '1px solid rgba(111, 148, 125, 0.6)' : '1px solid rgba(214, 198, 165, 0.16)',
+                padding: '20px',
+                background: collected ? 'rgba(0, 240, 255, 0.05)' : 'var(--bg-surface)',
+                border: collected ? '1px solid rgba(0, 240, 255, 0.45)' : '1px solid var(--border-subtle)',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.65), inset 0 1px 1px rgba(234, 229, 216, 0.12)',
-                minHeight: '155px',
                 justifyContent: 'space-between',
-                backdropFilter: 'blur(16px)'
+                transition: 'all 0.16s ease',
+                position: 'relative'
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '4px', background: `${sig.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon size={16} color={sig.color} />
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '4px',
+                      background: 'rgba(255,255,255,0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: sig.color
+                    }}>
+                      <Icon size={16} />
                     </div>
                     <span className="font-hud" style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.12em', color: sig.color }}>
                       [ {sig.tag} ]
@@ -215,158 +419,210 @@ export default function IncidentInvestigationScreen({
                   </div>
 
                   {collected ? (
-                    <span className="badge-status badge-stable" style={{ fontSize: '10px' }}>
-                      ✓ COLLECTED
+                    <span className="aegis-badge badge-normal" style={{ fontSize: '9px' }}>
+                      ✓ EVIDENCE COLLECTED
                     </span>
                   ) : (
-                    <span className="font-mono" style={{ fontSize: '11px', color: '#9FB5A4' }}>
-                      CLICK TO PROBE
+                    <span className={`aegis-badge ${sig.severity === 'CRITICAL' ? 'badge-critical' : 'badge-warning'}`} style={{ fontSize: '9px' }}>
+                      {sig.severity}
                     </span>
                   )}
                 </div>
 
-                <div className="font-hud" style={{ fontSize: '20px', fontWeight: '800', color: '#EAE5D8' }}>
+                <h3 className="font-hud" style={{ fontSize: '17px', fontWeight: '800', color: '#FFFFFF', margin: '2px 0 6px 0' }}>
                   {sig.headline}
-                </div>
+                </h3>
+
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
+                  {sig.description}
+                </p>
               </div>
 
-              <div className="font-mono" style={{ fontSize: '15px', fontWeight: '800', color: sig.color }}>
-                {sig.value}
+              {/* Bottom Telemetry Strip */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderTop: '1px solid var(--border-subtle)',
+                paddingTop: '8px',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  VAL: <strong style={{ color: sig.color }}>{sig.value}</strong>
+                </span>
+
+                <span style={{ color: 'var(--color-sand)' }}>
+                  CONF: {sig.confidence}
+                </span>
+
+                <span style={{ color: '#EF4444', fontWeight: '700' }}>
+                  RISK: {sig.risk}
+                </span>
+
+                <span style={{ color: 'var(--color-cyan)', fontWeight: '700' }}>
+                  PROBE →
+                </span>
               </div>
-            </Aegis3DCard>
+            </div>
           );
         })}
       </div>
 
-      {/* Bottom Evidence Tracker & Fuse Incident Button */}
+      {/* Fuse Evidence Action Bar */}
       <div style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '6px',
+        padding: '16px 22px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: '100%',
-        padding: '16px 24px',
-        background: 'rgba(14, 27, 21, 0.85)',
-        border: '1px solid rgba(214, 198, 165, 0.2)',
-        borderRadius: '6px',
-        boxShadow: '0 12px 30px rgba(0,0,0,0.6), inset 0 1px 1px rgba(234, 229, 216, 0.12)',
-        backdropFilter: 'blur(20px)'
+        flexWrap: 'wrap',
+        gap: '14px',
+        marginTop: 'auto'
       }}>
         <div>
-          <span className="font-hud" style={{ fontSize: '12px', color: '#9FB5A4', letterSpacing: '0.1em', display: 'block' }}>
-            EVIDENCE DOSSIER PROGRESS:
-          </span>
-          <span className="font-mono" style={{ fontSize: '18px', fontWeight: '800', color: canFuse ? '#6F947D' : '#C99A45' }}>
-            {collectedEvidence.length} / 6 PIECES COLLECTED {canFuse ? "(CRISIS CORRELATION UNLOCKED)" : "(MINIMUM 3 REQUIRED)"}
-          </span>
+          <div style={{ fontSize: '14px', fontWeight: '800', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={16} color="var(--color-cyan)" />
+            <span>INCIDENT FUSION CORE: {canFuse ? 'READY TO SYNTHESIZE' : 'EVIDENCE REQUIRED'}</span>
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            {canFuse 
+              ? `${collectedEvidence.length} signals collected. Ready to activate Bayesian Data Fusion matrix.` 
+              : `Collect at least 3 telemetry signals by clicking "Collect Evidence" on modal probes to synthesize.`}
+          </div>
         </div>
 
-        <AegisPrimaryCommand
-          label="FUSE INCIDENT"
-          subtitle="MULTI-SIGNAL SYNTHESIS ENGINE"
-          status={canFuse ? "CORRELATION READY" : "LOCKED (MIN 3 SIGNALS)"}
-          icon="◈"
+        <button
           onClick={onFuseIncident}
           disabled={!canFuse}
-          variant="sage"
-          width="320px"
-        />
+          className="aegis-btn aegis-btn-primary"
+          style={{ padding: '10px 24px', fontSize: '12px' }}
+        >
+          <span>SYNTHESIZE SIGNALS ({collectedEvidence.length}/3)</span>
+          <ChevronRight size={14} />
+        </button>
       </div>
 
-      {/* Detail Modal with RAW SENSOR TELEMETRY */}
+      {/* ──────────────────────────────────────────────────────────────────
+          TELEMETRY PROBE MODAL
+      ────────────────────────────────────────────────────────────────── */}
       {activeModalSignal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(4, 7, 12, 0.85)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          padding: '20px'
-        }}>
-          <div className="hud-panel hud-bracket" style={{ width: '600px', maxWidth: '95vw', background: '#0b0f17', border: `1px solid ${activeModalSignal.color}`, borderRadius: '6px', padding: '26px', display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px' }}>
-              <div>
-                <span className="font-hud" style={{ fontSize: '12px', color: activeModalSignal.color, letterSpacing: '0.12em' }}>
-                  EVIDENCE TELEMETRY DISSECTION
+        <div className="aegis-modal-backdrop" onClick={() => setActiveModalSignal(null)}>
+          <div className="aegis-modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="aegis-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className="font-hud" style={{ fontSize: '14px', fontWeight: '800', color: activeModalSignal.color }}>
+                  [{activeModalSignal.tag}]
                 </span>
-                <h3 className="font-hud" style={{ fontSize: '24px', fontWeight: '700', color: '#f8fafc', margin: '2px 0 0 0' }}>
-                  {activeModalSignal.headline.toUpperCase()}
-                </h3>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: '#FFFFFF' }}>
+                  {activeModalSignal.headline}
+                </span>
               </div>
-
-              <button 
+              <button
                 onClick={() => setActiveModalSignal(null)}
-                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: '10px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#94a3b8' }}>VALUE</span>
-                <div className="font-mono" style={{ fontSize: '18px', fontWeight: '700', color: activeModalSignal.color }}>
-                  {activeModalSignal.value}
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: '10px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#94a3b8' }}>CONFIDENCE</span>
-                <div className="font-mono" style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>
-                  {activeModalSignal.confidence}
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: '10px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#94a3b8' }}>RISK IMPACT</span>
-                <div className="font-mono" style={{ fontSize: '18px', fontWeight: '700', color: '#ef4444' }}>
-                  {activeModalSignal.risk} PTS
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <span className="font-mono" style={{ fontSize: '11px', color: '#94a3b8' }}>SOURCE: {activeModalSignal.source}</span>
-              <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.45, margin: '6px 0 0 0' }}>
+            <div className="aegis-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
                 {activeModalSignal.description}
-              </p>
-            </div>
+              </div>
 
-            {/* RESTORED: RAW SENSOR TELEMETRY BLOCK */}
-            <div style={{ background: 'rgba(10, 14, 22, 0.95)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', padding: '10px 14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                <Terminal size={14} color="#06b6d4" />
-                <span className="font-hud" style={{ fontSize: '11px', fontWeight: '700', color: '#67e8f9', letterSpacing: '0.08em' }}>
-                  RAW SENSOR TELEMETRY [{activeModalSignal.tag}]
+              {/* Raw Telemetry Matrix */}
+              <div>
+                <span className="aegis-data-label">VERIFIED SENSOR TELEMETRY</span>
+                <table className="aegis-table">
+                  <tbody>
+                    {activeModalSignal.rawTelemetry.map((row, rIdx) => (
+                      <tr key={rIdx}>
+                        <td style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{row.label}</td>
+                        <td style={{ textAlign: 'right', fontWeight: '700', color: 'var(--color-cyan)', fontFamily: 'var(--font-mono)' }}>
+                          {row.value}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Source & Diagnostics */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '8px 10px', borderRadius: '4px' }}>
+                  <div className="font-mono" style={{ fontSize: '9px', color: 'var(--text-muted)' }}>SOURCE INGESTION</div>
+                  <div style={{ fontSize: '11px', color: '#FFFFFF' }}>{activeModalSignal.source}</div>
+                </div>
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '8px 10px', borderRadius: '4px' }}>
+                  <div className="font-mono" style={{ fontSize: '9px', color: 'var(--text-muted)' }}>CONFIDENCE SCORE</div>
+                  <div className="font-mono" style={{ fontSize: '11px', color: '#10B981', fontWeight: '700' }}>
+                    {activeModalSignal.confidence} VERIFIED
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Action */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+                <button
+                  onClick={() => setActiveModalSignal(null)}
+                  className="aegis-btn aegis-btn-outline"
+                >
+                  DISMISS
+                </button>
+                <button
+                  onClick={() => handleCollect(activeModalSignal)}
+                  className="aegis-btn aegis-btn-primary"
+                >
+                  {isCollected(activeModalSignal.id) ? '✓ ALREADY IN EVIDENCE LOG' : 'COLLECT AS EVIDENCE'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────────────
+          INCIDENT HISTORY LOG DRAWER
+      ────────────────────────────────────────────────────────────────── */}
+      {showHistoryDrawer && (
+        <div className="aegis-modal-backdrop" onClick={() => setShowHistoryDrawer(false)}>
+          <div className="aegis-modal-panel" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="aegis-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={16} color="var(--color-cyan)" />
+                <span className="font-hud" style={{ fontSize: '16px', fontWeight: '800', color: '#FFFFFF' }}>
+                  INCIDENT TELEMETRY AUDIT LOG
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '11px' }} className="font-mono">
-                {activeModalSignal.rawTelemetry?.map((item, idx) => (
-                  <div key={idx} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '3px 8px', borderRadius: '2px', color: '#94a3b8' }}>
-                    <span style={{ color: '#cbd5e1' }}>{item.label}:</span> <strong style={{ color: activeModalSignal.color }}>{item.value}</strong>
+              <button
+                onClick={() => setShowHistoryDrawer(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="aegis-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {signals.map(s => (
+                <div key={s.id} style={{ background: 'var(--bg-surface-elevated)', padding: '12px', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: '700', color: s.color, fontSize: '12px' }}>{s.headline}</span>
+                    <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{s.timestamp}</span>
                   </div>
-                ))}
-              </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {(s.history || []).map((h, hIdx) => (
+                      <div key={hIdx} style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', gap: '6px' }}>
+                        <span className="font-mono" style={{ color: 'var(--color-sand)', flexShrink: 0 }}>{h.time}</span>
+                        <span>{h.event}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div style={{ marginTop: '6px' }}>
-              <AegisCommandModule
-                tag={activeModalSignal.tag}
-                title={isCollected(activeModalSignal.id) ? "TELEMETRY COMMITTED" : `COMMIT ${activeModalSignal.tag} DATA`}
-                detail="INTEGRATE SENSOR TELEMETRY INTO INCIDENT DOSSIER"
-                status={isCollected(activeModalSignal.id) ? "DATA ACQUIRED" : "READY"}
-                onClick={() => handleCollect(activeModalSignal)}
-                disabled={isCollected(activeModalSignal.id)}
-                variant="cyan"
-              />
-            </div>
-
           </div>
         </div>
       )}

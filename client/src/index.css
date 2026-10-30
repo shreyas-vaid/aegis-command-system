@@ -1,77 +1,68 @@
 :root {
-  /* AEGIS / COMMAND Design System Tokens */
-  --bg-primary: #0A0D12;
-  --bg-deep-graphite: #0E131A;
-  --bg-surface: #131822;
-  --bg-surface-elevated: #1A202C;
-  --bg-surface-hover: #222938;
-  --bg-panel: rgba(19, 24, 34, 0.94);
-  --bg-panel-solid: #131822;
-  --bg-panel-hover: rgba(26, 32, 44, 0.75);
+  /* AEGIS COMMAND Tactical Design System Tokens */
+  --bg-primary: #070B12;
+  --bg-deep-navy: #090E17;
+  --bg-surface: #0E1524;
+  --bg-surface-elevated: #151F33;
+  --bg-surface-hover: #1C2A44;
+  --bg-panel: rgba(14, 21, 36, 0.94);
+  --bg-panel-solid: #0E1524;
+  --bg-panel-hover: rgba(21, 31, 51, 0.8);
 
-  /* Primary Accent: Muted Emerald / Forest Green */
-  --color-accent: #2E7D5A;
-  --color-accent-light: #3E9E74;
-  --color-accent-subtle: rgba(46, 125, 90, 0.15);
-  --color-forest: #1E4D37;
-  --color-forest-light: #2E7D5A;
-  --color-sage: #3E9E74;
-  --color-sage-light: #6BB893;
+  /* Primary Accent: Electric Cyan */
+  --color-accent: #00F0FF;
+  --color-accent-light: #38BDF8;
+  --color-accent-subtle: rgba(0, 240, 255, 0.12);
+  --color-accent-border: rgba(0, 240, 255, 0.35);
+  --color-cyan: #00F0FF;
+  --color-cyan-dim: #0284C7;
+  --color-cyan-glow: rgba(0, 240, 255, 0.25);
 
-  /* Secondary Accent: Warm Sand / Beige */
+  /* Secondary Accent: Tactical Muted Sand */
   --color-sand: #C8B99D;
   --color-sand-light: #DDD2BF;
   --color-sand-subtle: rgba(200, 185, 157, 0.12);
-  --color-beige: #C8B99D;
-  --color-beige-light: #DDD2BF;
+  --border-sand: rgba(200, 185, 157, 0.3);
 
   /* Text Hierarchy */
-  --text-primary: #F0EDE6;
-  --text-secondary: #9AA4AF;
-  --text-muted: #6E7681;
-  --color-off-white: #F0EDE6;
-  --color-charcoal: #0A0D12;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --color-off-white: #F1F5F9;
+  --color-charcoal: #070B12;
 
-  /* Restrained Semantic Colors */
-  --color-critical: #C93B3B;
-  --color-critical-muted: #A83232;
-  --color-critical-bg: rgba(201, 59, 59, 0.12);
-  --color-critical-border: rgba(201, 59, 59, 0.35);
+  /* Semantic Alert & Operational Status Colors */
+  --color-critical: #EF4444;
+  --color-critical-muted: #DC2626;
+  --color-critical-bg: rgba(239, 68, 68, 0.14);
+  --color-critical-border: rgba(239, 68, 68, 0.4);
 
-  --color-warning: #C98A2C;
-  --color-warning-muted: #A67123;
-  --color-warning-bg: rgba(201, 138, 44, 0.12);
-  --color-warning-border: rgba(201, 138, 44, 0.35);
-  --color-amber: #C98A2C;
-  --color-amber-bg: rgba(201, 138, 44, 0.12);
-  --color-orange: #C98A2C;
-  --color-orange-bg: rgba(201, 138, 44, 0.12);
+  --color-warning: #F59E0B;
+  --color-warning-muted: #D97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-warning-border: rgba(245, 158, 11, 0.4);
 
-  --color-normal: #348A64;
-  --color-normal-bg: rgba(52, 138, 100, 0.12);
-  --color-normal-border: rgba(52, 138, 100, 0.35);
-  --color-stable: #348A64;
-  --color-stable-bg: rgba(52, 138, 100, 0.12);
+  --color-normal: #10B981;
+  --color-normal-bg: rgba(16, 185, 129, 0.14);
+  --color-normal-border: rgba(16, 185, 129, 0.4);
+  --color-stable: #10B981;
+  --color-stable-bg: rgba(16, 185, 129, 0.14);
 
-  --color-inactive: #7A828E;
-  --color-inactive-bg: rgba(122, 130, 142, 0.12);
-  --color-inactive-border: rgba(122, 130, 142, 0.3);
+  --color-inactive: #64748B;
+  --color-inactive-bg: rgba(100, 116, 139, 0.14);
+  --color-inactive-border: rgba(100, 116, 139, 0.3);
   --color-unknown: #8B7FA8;
   --color-unknown-bg: rgba(139, 127, 168, 0.14);
-  --color-cyan: #3E9E74;
-  --color-cyan-bg: rgba(62, 158, 116, 0.14);
 
-  /* Subtle Borders & Dividers */
+  /* Subtle Tactical Borders */
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-medium: rgba(255, 255, 255, 0.14);
-  --border-accent: rgba(62, 158, 116, 0.35);
-  --border-beige-active: rgba(200, 185, 157, 0.5);
-  --border-glass: rgba(240, 237, 230, 0.12);
+  --border-accent: rgba(0, 240, 255, 0.35);
 
   /* Typography */
-  --font-hud: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-hud: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * {
@@ -1550,3 +1541,125 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── TACTICAL APP LAYOUT & SIDEBAR ───────────────────────────────────── */
+.aegis-app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.aegis-sidebar {
+  width: 250px;
+  background: var(--bg-deep-navy);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 120;
+}
+
+.aegis-sidebar.collapsed {
+  width: 68px;
+}
+
+.aegis-sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  margin: 2px 8px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+  border: 1px solid transparent;
+  text-decoration: none;
+  position: relative;
+}
+
+.aegis-sidebar-nav-item:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.aegis-sidebar-nav-item.active {
+  background: rgba(0, 240, 255, 0.09);
+  color: var(--color-cyan);
+  border-color: rgba(0, 240, 255, 0.25);
+  font-weight: 600;
+}
+
+.aegis-sidebar-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: var(--color-cyan);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--color-cyan);
+}
+
+.aegis-main-viewport {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+/* ─── LEAFLET DARK TACTICAL MAP OVERRIDES ─────────────────────────────── */
+.leaflet-container {
+  background: #080c14 !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Dark mode tiles styling */
+.dark-tiles .leaflet-tile {
+  filter: brightness(0.65) invert(1) contrast(2.4) hue-rotate(205deg) saturate(0.25);
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-surface-elevated) !important;
+  border: 1px solid var(--border-medium) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-surface-elevated) !important;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border-medium) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 4px !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: var(--bg-surface-elevated) !important;
+  color: var(--color-cyan) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--bg-surface-hover) !important;
+  color: #fff !important;
+}
+
