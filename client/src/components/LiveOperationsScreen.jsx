@@ -28,7 +28,10 @@ import {
   ShieldCheck,
   AlertOctagon,
   Eye,
-  Info
+  Info,
+  Satellite,
+  Mountain,
+  Map
 } from 'lucide-react';
 import { AegisAnimatedNumber } from './aegis-interactive';
 import { 
@@ -38,6 +41,67 @@ import {
   assignResource, 
   getMissionIntelligence 
 } from '../services/api';
+
+// Basemap Tile Providers for Phase 1 Geospatial Intelligence
+export const BASEMAP_PROVIDERS = {
+  dark: {
+    id: 'dark',
+    name: 'DARK TACTICAL',
+    providerName: 'CartoDB Dark Matter',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    options: {
+      maxZoom: 19,
+      subdomains: 'abcd',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+    },
+    badge: 'DEFAULT'
+  },
+  satellite: {
+    id: 'satellite',
+    name: 'SATELLITE ORTHO',
+    providerName: 'Esri World Imagery',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    options: {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, GIS Community'
+    },
+    badge: 'OPTICAL'
+  },
+  topo: {
+    id: 'topo',
+    name: 'TOPOGRAPHY RELIEF',
+    providerName: 'OpenTopoMap',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    options: {
+      maxZoom: 17,
+      subdomains: 'abc',
+      attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>, SRTM | Style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+    },
+    badge: 'ELEVATION'
+  },
+  streets: {
+    id: 'streets',
+    name: 'STREET MATRIX',
+    providerName: 'OpenStreetMap Standard',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      maxZoom: 19,
+      subdomains: 'abc',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
+    },
+    badge: 'OSM'
+  }
+};
+
+// Tactical Theater Sectors for Geographic Selection
+export const THEATER_SECTORS = [
+  { id: 'ALL', name: 'THEATER OVERVIEW', short: 'ALL SECTORS', offsetLat: 0, offsetLng: 0, zoom: 13, desc: 'Complete 360 operational grid' },
+  { id: 'A', name: 'SECTOR A · INDUSTRIAL RIDGE', short: 'SEC-A', offsetLat: 0.016, offsetLng: -0.012, zoom: 15, desc: 'Chemical runoff hazard zone' },
+  { id: 'B', name: 'SECTOR B · RESIDENTIAL NORTH', short: 'SEC-B', offsetLat: 0.004, offsetLng: 0.008, zoom: 15, desc: 'High-density civilian sector' },
+  { id: 'C', name: 'SECTOR C · COMMERCIAL CORE', short: 'SEC-C', offsetLat: 0.009, offsetLng: -0.018, zoom: 15, desc: 'Urban transit and power grid' },
+  { id: 'D', name: 'SECTOR D · MEDICAL CORRIDOR', short: 'SEC-D', offsetLat: -0.012, offsetLng: 0.004, zoom: 15, desc: 'Hospital triage & dispatch hub' },
+  { id: 'E', name: 'SECTOR E · BLACKOUT PERIMETER', short: 'SEC-E', offsetLat: 0.018, offsetLng: 0.022, zoom: 15, desc: 'Telemetry dark recon zone' }
+];
 
 // Fix Leaflet's default marker icon paths in Vite bundles
 delete L.Icon.Default.prototype._getIconUrl;
@@ -61,12 +125,20 @@ export default function LiveOperationsScreen({
   // Map reference
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const activeTileLayerRef = useRef(null);
   const layersGroupRef = useRef({
     zones: null,
     incidents: null,
     resources: null,
     routes: null
   });
+
+  // Geospatial Map Foundation State (Phase 1)
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [activeBasemap, setActiveBasemap] = useState('dark');
+  const [mapTileLoading, setMapTileLoading] = useState(false);
+  const [mapTileError, setMapTileError] = useState(null);
+  const [activeSector, setActiveSector] = useState('ALL');
 
   // State
   const [loading, setLoading] = useState(true);
@@ -428,41 +500,114 @@ export default function LiveOperationsScreen({
     return { total, deployed, available, critical };
   }, [resourcesList, incidentsList]);
 
-  // Initialize and update Leaflet Map
+  // Geographic sector focus handler
+  const handleSelectSector = useCallback((sectorId) => {
+    setActiveSector(sectorId);
+    if (!mapInstanceRef.current) return;
+    const sector = THEATER_SECTORS.find(s => s.id === sectorId);
+    if (!sector) return;
+
+    mapInstanceRef.current.flyTo(
+      [centerLat + sector.offsetLat, centerLng + sector.offsetLng],
+      sector.zoom,
+      { duration: 1.2, easeLinearity: 0.25 }
+    );
+
+    if (sectorId !== 'ALL') {
+      const matchedZone = zonesList.find(z => z.id === sectorId);
+      if (matchedZone) {
+        setSelectedItem({ type: 'ZONE', data: matchedZone });
+        setDeployTargetZone(matchedZone.id);
+      }
+    }
+  }, [centerLat, centerLng, zonesList]);
+
+  // 1. Initialize Leaflet Map instance
   useEffect(() => {
     if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return;
 
-    if (!mapInstanceRef.current) {
-      // 1. Initialize Leaflet Map
-      const map = L.map(mapContainerRef.current, {
-        center: [centerLat, centerLng],
-        zoom: 13,
-        zoomControl: true,
-        attributionControl: false
-      });
+    const map = L.map(mapContainerRef.current, {
+      center: [centerLat, centerLng],
+      zoom: 13,
+      zoomControl: true,
+      attributionControl: true
+    });
 
-      // 2. Add Dark Matter Tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
-      }).addTo(map);
-
-      // Attribution banner
-      L.control.attribution({ position: 'bottomright', prefix: false })
-        .addAttribution('AEGIS Tactical GIS // OpenStreetMap & CartoDB')
-        .addTo(map);
-
-      // Initialize layer groups
-      layersGroupRef.current.zones = L.layerGroup().addTo(map);
-      layersGroupRef.current.routes = L.layerGroup().addTo(map);
-      layersGroupRef.current.incidents = L.layerGroup().addTo(map);
-      layersGroupRef.current.resources = L.layerGroup().addTo(map);
-
-      mapInstanceRef.current = map;
+    if (map.attributionControl) {
+      map.attributionControl.setPrefix('AEGIS GEOSPATIAL INTELLIGENCE');
     }
 
+    // Initialize layer groups
+    layersGroupRef.current.zones = L.layerGroup().addTo(map);
+    layersGroupRef.current.routes = L.layerGroup().addTo(map);
+    layersGroupRef.current.incidents = L.layerGroup().addTo(map);
+    layersGroupRef.current.resources = L.layerGroup().addTo(map);
+
+    mapInstanceRef.current = map;
+    setIsMapReady(true);
+
+    const resizeTimer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+
+    return () => {
+      clearTimeout(resizeTimer);
+      map.remove();
+      mapInstanceRef.current = null;
+      setIsMapReady(false);
+    };
+  }, [centerLat, centerLng]);
+
+  // 2. Basemap tile swapping with loading and error tracking
+  useEffect(() => {
+    if (!isMapReady || !mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
+    const provider = BASEMAP_PROVIDERS[activeBasemap] || BASEMAP_PROVIDERS.dark;
+
+    // Remove current tile layer if present
+    if (activeTileLayerRef.current) {
+      try {
+        map.removeLayer(activeTileLayerRef.current);
+      } catch (e) {
+        // Safe cleanup
+      }
+      activeTileLayerRef.current = null;
+    }
+
+    setMapTileLoading(true);
+    setMapTileError(null);
+
+    const tileLayer = L.tileLayer(provider.url, {
+      ...provider.options
+    });
+
+    tileLayer.on('loading', () => {
+      setMapTileLoading(true);
+    });
+
+    tileLayer.on('load', () => {
+      setMapTileLoading(false);
+      setMapTileError(null);
+    });
+
+    tileLayer.on('tileerror', () => {
+      setMapTileLoading(false);
+      setMapTileError(`Tile stream delay on ${provider.providerName}`);
+    });
+
+    tileLayer.addTo(map);
+    if (tileLayer.bringToBack) {
+      tileLayer.bringToBack();
+    }
+    activeTileLayerRef.current = tileLayer;
+  }, [isMapReady, activeBasemap]);
+
+  // 3. Render disaster zones, routes, incidents and resources into their layer groups
+  useEffect(() => {
+    if (!isMapReady || !mapInstanceRef.current) return;
     const { zones: zonesGroup, incidents: incidentsGroup, resources: resourcesGroup, routes: routesGroup } = layersGroupRef.current;
+    if (!zonesGroup || !incidentsGroup || !resourcesGroup || !routesGroup) return;
 
     // Clear current layers
     zonesGroup.clearLayers();
@@ -640,6 +785,7 @@ export default function LiveOperationsScreen({
     }
 
   }, [
+    isMapReady,
     centerLat, 
     centerLng, 
     zonesList, 
@@ -851,98 +997,186 @@ export default function LiveOperationsScreen({
       </section>
 
       {/* ──────────────────────────────────────────────────────────────────
-          FILTER & LAYER CONTROL TOOLBAR
+          GEOSPATIAL & LAYER CONTROL TOOLBAR (PHASE 1)
       ────────────────────────────────────────────────────────────────── */}
       <div style={{
-        padding: '8px 20px',
-        background: 'rgba(14, 21, 36, 0.85)',
+        padding: '10px 20px',
+        background: 'rgba(14, 21, 36, 0.94)',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
+        flexDirection: 'column',
         gap: '10px'
       }}>
-        {/* Layer Toggles */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
-            MAP LAYERS:
-          </span>
-          <button
-            onClick={() => setLayerVisibility(p => ({ ...p, zones: !p.zones }))}
-            className={`aegis-filter-pill ${layerVisibility.zones ? 'active' : ''}`}
-          >
-            DISASTER ZONES
-          </button>
-          <button
-            onClick={() => setLayerVisibility(p => ({ ...p, incidents: !p.incidents }))}
-            className={`aegis-filter-pill ${layerVisibility.incidents ? 'active' : ''}`}
-          >
-            INCIDENT MARKERS
-          </button>
-          <button
-            onClick={() => setLayerVisibility(p => ({ ...p, resources: !p.resources }))}
-            className={`aegis-filter-pill ${layerVisibility.resources ? 'active' : ''}`}
-          >
-            FLEET POSITIONS
-          </button>
-          <button
-            onClick={() => setLayerVisibility(p => ({ ...p, routes: !p.routes }))}
-            className={`aegis-filter-pill ${layerVisibility.routes ? 'active' : ''}`}
-          >
-            TRANSIT ARTERIES
-          </button>
+        {/* ROW 1: BASEMAP PROVIDER SELECTION & THEATER FOCUS */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          {/* Basemap Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--color-cyan)', fontWeight: '800', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Layers size={13} />
+              BASEMAP:
+            </span>
+            {Object.values(BASEMAP_PROVIDERS).map((bm) => {
+              const isActive = activeBasemap === bm.id;
+              return (
+                <button
+                  key={bm.id}
+                  onClick={() => setActiveBasemap(bm.id)}
+                  className={`aegis-filter-pill ${isActive ? 'active' : ''}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    borderColor: isActive ? 'var(--color-cyan)' : undefined
+                  }}
+                  title={`Switch basemap to ${bm.providerName}`}
+                >
+                  {bm.id === 'dark' && <ShieldCheck size={11} />}
+                  {bm.id === 'satellite' && <Satellite size={11} />}
+                  {bm.id === 'topo' && <Mountain size={11} />}
+                  {bm.id === 'streets' && <Map size={11} />}
+                  <span>{bm.name}</span>
+                  <span style={{
+                    fontSize: '9px',
+                    opacity: 0.75,
+                    padding: '1px 4px',
+                    borderRadius: '2px',
+                    background: isActive ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 255, 255, 0.08)'
+                  }}>
+                    {bm.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Theater Quick Jump */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Compass size={12} />
+              THEATER FOCUS:
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+              {THEATER_SECTORS.map((sec) => {
+                const isCurrent = activeSector === sec.id;
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => handleSelectSector(sec.id)}
+                    className={`aegis-filter-pill ${isCurrent ? 'active' : ''}`}
+                    style={{
+                      padding: '3px 8px',
+                      fontSize: '9.5px',
+                      background: isCurrent ? 'rgba(0, 240, 255, 0.16)' : undefined,
+                      borderColor: isCurrent ? 'var(--color-cyan)' : undefined,
+                      color: isCurrent ? 'var(--color-cyan)' : undefined
+                    }}
+                    title={sec.desc}
+                  >
+                    {sec.short}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* Severity & Resource Category Filters */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
-            FILTERS:
-          </span>
-          <select
-            value={incidentFilterSeverity}
-            onChange={(e) => setIncidentFilterSeverity(e.target.value)}
-            className="aegis-select"
-            title="Filter incidents by severity"
-          >
-            <option value="ALL">ALL SEVERITIES</option>
-            <option value="CRITICAL">CRITICAL ONLY</option>
-            <option value="WARNING">WARNING ONLY</option>
-          </select>
+        {/* ROW 2: TACTICAL LAYER TOGGLES & INCIDENT/RESOURCE FILTERS */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          paddingTop: '8px',
+          borderTop: '1px dashed rgba(255, 255, 255, 0.08)'
+        }}>
+          {/* Layer Toggles */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
+              MAP LAYERS:
+            </span>
+            <button
+              onClick={() => setLayerVisibility(p => ({ ...p, zones: !p.zones }))}
+              className={`aegis-filter-pill ${layerVisibility.zones ? 'active' : ''}`}
+            >
+              DISASTER ZONES
+            </button>
+            <button
+              onClick={() => setLayerVisibility(p => ({ ...p, incidents: !p.incidents }))}
+              className={`aegis-filter-pill ${layerVisibility.incidents ? 'active' : ''}`}
+            >
+              INCIDENT MARKERS
+            </button>
+            <button
+              onClick={() => setLayerVisibility(p => ({ ...p, resources: !p.resources }))}
+              className={`aegis-filter-pill ${layerVisibility.resources ? 'active' : ''}`}
+            >
+              FLEET POSITIONS
+            </button>
+            <button
+              onClick={() => setLayerVisibility(p => ({ ...p, routes: !p.routes }))}
+              className={`aegis-filter-pill ${layerVisibility.routes ? 'active' : ''}`}
+            >
+              TRANSIT ARTERIES
+            </button>
+          </div>
 
-          <select
-            value={resourceFilterCategory}
-            onChange={(e) => setResourceFilterCategory(e.target.value)}
-            className="aegis-select"
-            title="Filter resources by category"
-          >
-            <option value="ALL">ALL CATEGORIES</option>
-            <option value="MEDICAL">MEDICAL TEAMS</option>
-            <option value="VEHICLE">RESCUE VEHICLES</option>
-            <option value="EQUIPMENT">EQUIPMENT</option>
-            <option value="SUPPLIES">SUPPLIES</option>
-          </select>
+          {/* Severity & Resource Category Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
+              FILTERS:
+            </span>
+            <select
+              value={incidentFilterSeverity}
+              onChange={(e) => setIncidentFilterSeverity(e.target.value)}
+              className="aegis-select"
+              title="Filter incidents by severity"
+            >
+              <option value="ALL">ALL SEVERITIES</option>
+              <option value="CRITICAL">CRITICAL ONLY</option>
+              <option value="WARNING">WARNING ONLY</option>
+            </select>
 
-          <select
-            value={resourceFilterStatus}
-            onChange={(e) => setResourceFilterStatus(e.target.value)}
-            className="aegis-select"
-            title="Filter resources by status"
-          >
-            <option value="ALL">ALL STATUSES</option>
-            <option value="AVAILABLE">AVAILABLE ONLY</option>
-            <option value="DEPLOYED">DEPLOYED ONLY</option>
-            <option value="STAGED">STAGED ONLY</option>
-          </select>
+            <select
+              value={resourceFilterCategory}
+              onChange={(e) => setResourceFilterCategory(e.target.value)}
+              className="aegis-select"
+              title="Filter resources by category"
+            >
+              <option value="ALL">ALL CATEGORIES</option>
+              <option value="MEDICAL">MEDICAL TEAMS</option>
+              <option value="VEHICLE">RESCUE VEHICLES</option>
+              <option value="EQUIPMENT">EQUIPMENT</option>
+              <option value="SUPPLIES">SUPPLIES</option>
+            </select>
 
-          <button
-            onClick={() => fetchTelemetry()}
-            className="aegis-btn aegis-btn-secondary"
-            style={{ padding: '5px 8px', fontSize: '11px' }}
-            title="Refresh telemetries"
-          >
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-          </button>
+            <select
+              value={resourceFilterStatus}
+              onChange={(e) => setResourceFilterStatus(e.target.value)}
+              className="aegis-select"
+              title="Filter resources by status"
+            >
+              <option value="ALL">ALL STATUSES</option>
+              <option value="AVAILABLE">AVAILABLE ONLY</option>
+              <option value="DEPLOYED">DEPLOYED ONLY</option>
+              <option value="STAGED">STAGED ONLY</option>
+            </select>
+
+            <button
+              onClick={() => fetchTelemetry()}
+              className="aegis-btn aegis-btn-secondary"
+              style={{ padding: '5px 8px', fontSize: '11px' }}
+              title="Refresh telemetries"
+            >
+              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -961,6 +1195,83 @@ export default function LiveOperationsScreen({
             ref={mapContainerRef} 
             style={{ width: '100%', height: '100%', minHeight: '560px', position: 'absolute', inset: 0 }}
           />
+
+          {/* Tile Status & Tactical HUD Overlay */}
+          <div style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            {mapTileLoading && (
+              <div style={{
+                background: 'rgba(9, 14, 23, 0.94)',
+                border: '1px solid var(--color-cyan)',
+                borderRadius: '4px',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 0 14px rgba(0, 240, 255, 0.3)',
+                color: 'var(--color-cyan)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                fontWeight: '700'
+              }}>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>STREAMING TILES [{BASEMAP_PROVIDERS[activeBasemap]?.providerName}]</span>
+              </div>
+            )}
+
+            {mapTileError && (
+              <button
+                onClick={() => setActiveBasemap('dark')}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid #EF4444',
+                  borderRadius: '4px',
+                  padding: '6px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 0 14px rgba(239, 68, 68, 0.4)',
+                  color: '#FCA5A5',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+                title="Click to fallback to Dark Tactical basemap"
+              >
+                <AlertTriangle size={12} color="#EF4444" />
+                <span>{mapTileError} // CLICK TO FALLBACK</span>
+              </button>
+            )}
+
+            {!mapTileLoading && !mapTileError && (
+              <div style={{
+                background: 'rgba(9, 14, 23, 0.88)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '4px',
+                padding: '5px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backdropFilter: 'blur(8px)',
+                color: '#94A3B8',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                <span>GEOSPATIAL FEED: {BASEMAP_PROVIDERS[activeBasemap]?.name} ({BASEMAP_PROVIDERS[activeBasemap]?.providerName})</span>
+              </div>
+            )}
+          </div>
 
           {/* Floating Map Legend */}
           <div style={{
